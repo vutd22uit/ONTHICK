@@ -456,5 +456,118 @@ const cloudQuestions = [
         ],
         correct: 1,
         explanation: "Heat là orchestration service, cho phép define infrastructure dưới dạng code (template) và tự động deploy."
+    },
+    // Week 3 - Virtual Machine Technology
+    {
+        question: "Sự khác biệt chính giữa Hypervisor loại 1 (Type-1) và loại 2 (Type-2) là gì?",
+        options: [
+            "Loại 1 chạy trên Host OS, Loại 2 chạy trực tiếp trên phần cứng",
+            "Loại 1 chạy trực tiếp trên phần cứng (bare-metal), Loại 2 chạy trên Host OS",
+            "Loại 1 chỉ dùng cho Windows, Loại 2 chỉ dùng cho Linux",
+            "Không có sự khác biệt về hiệu năng"
+        ],
+        correct: 1,
+        explanation: "Type-1 Hypervisor (như ESXi, KVM) chạy trực tiếp trên phần cứng để quản lý tài nguyên, trong khi Type-2 (như VirtualBox) chạy như một ứng dụng trên hệ điều hành chủ."
+    },
+    {
+        question: "NUMA (Non-Uniform Memory Access) ảnh hưởng như thế nào đến hiệu năng VM?",
+        options: [
+            "Truy cập bộ nhớ cục bộ (Local Memory) chậm hơn bộ nhớ từ xa",
+            "Giúp đồng bộ dữ liệu giữa các máy chủ",
+            "Truy cập bộ nhớ cục bộ (Local Memory) nhanh hơn truy cập bộ nhớ từ xa (Remote Memory)",
+            "Không ảnh hưởng gì đến hiệu năng"
+        ],
+        correct: 2,
+        explanation: "Trong kiến trúc NUMA, mỗi CPU socket có vùng nhớ riêng. Việc truy cập vùng nhớ local sẽ có độ trễ thấp hơn so với truy cập vùng nhớ của CPU socket khác (remote)."
+    },
+    {
+        question: "Tính năng Live Migration cho phép thực hiện điều gì?",
+        options: [
+            "Di chuyển máy ảo giữa các máy chủ vật lý mà không làm gián đoạn dịch vụ (hoặc gián đoạn rất ít)",
+            "Sao chép dữ liệu từ RAM ra ổ cứng",
+            "Tự động cài đặt hệ điều hành cho máy ảo",
+            "Tăng dung lượng ổ cứng cho máy ảo khi đang chạy"
+        ],
+        correct: 0,
+        explanation: "Live Migration cho phép di chuyển một VM đang chạy từ host này sang host khác mà không cần tắt máy, giúp bảo trì hệ thống linh hoạt."
+    },
+    // Week 7 - Container Fundamentals
+    {
+        question: "So với Virtual Machine (VM), Container có đặc điểm kiến trúc nào nổi bật?",
+        options: [
+            "Mỗi Container có kernel riêng biệt",
+            "Container chia sẻ kernel của Host OS và cô lập qua Namespaces/Cgroups",
+            "Container khởi động chậm hơn VM",
+            "Container luôn bảo mật hơn VM"
+        ],
+        correct: 1,
+        explanation: "Container không có guest kernel riêng mà dùng chung kernel của host, sử dụng Namespaces để tách biệt không gian người dùng và Cgroups để quản lý tài nguyên."
+    },
+    {
+        question: "Trong hệ sinh thái Container, vai trò của 'runc' là gì?",
+        options: [
+            "Quản lý cluster (Orchestration)",
+            "Là low-level runtime tuân theo chuẩn OCI để tạo và chạy container",
+            "Là một Container Registry",
+            "Là công cụ xây dựng Docker Image"
+        ],
+        correct: 1,
+        explanation: "runc là một CLI tool để sinh ra và chạy các container theo chuẩn OCI (Open Container Initiative), là thành phần nền tảng bên dưới Docker và containerd."
+    },
+    {
+        question: "Kubernetes (K8s) đóng vai trò gì trong hệ thống Cloud?",
+        options: [
+            "Là một Hypervisor loại 1",
+            "Là hệ thống điều phối container (Container Orchestration) giúp tự động hóa việc deploy, scaling và quản lý ứng dụng",
+            "Là một cơ sở dữ liệu quan hệ",
+            "Là ngôn ngữ lập trình cho Cloud"
+        ],
+        correct: 1,
+        explanation: "Kubernetes là nền tảng Orchestration phổ biến nhất, giúp quản lý các ứng dụng container hóa ở quy mô lớn, tự động cân bằng tải và phục hồi lỗi."
+    },
+    // Week 8 - Enterprise Scale
+    {
+        question: "Mục đích chính của 'Infrastructure as Code' (IaC) là gì?",
+        options: [
+            "Viết tài liệu hướng dẫn sử dụng",
+            "Quản lý và cung cấp cơ sở hạ tầng thông qua code/template thay vì cấu hình thủ công",
+            "Mã hóa dữ liệu đường truyền",
+            "Tối ưu hóa thuật toán định tuyến"
+        ],
+        correct: 1,
+        explanation: "IaC (như Terraform, Heat, Ansible) giúp tự động hóa việc triển khai hạ tầng, đảm bảo tính nhất quán (consistency) và khả năng tái lập (reproducibility)."
+    },
+    {
+        question: "Trong Kubernetes Autoscaling, HPA (Horizontal Pod Autoscaler) hoạt động theo cơ chế nào?",
+        options: [
+            "Tăng kích thước CPU/RAM cho Pod hiện tại (Vertical)",
+            "Tự động thêm hoặc bớt số lượng Pods (replicas) dựa trên metrics (như CPU utilization)",
+            "Thêm Node mới vào Cluster",
+            "Xóa toàn bộ Pods và tạo lại"
+        ],
+        correct: 1,
+        explanation: "HPA (Horizontal scaling) mở rộng theo chiều ngang bằng cách tăng giảm số lượng bản sao (replicas) của Pod để đáp ứng tải."
+    },
+    {
+        question: "Để đảm bảo an toàn cho chuỗi cung ứng phần mềm (Supply Chain Security), hành động nào là quan trọng đối với Container Image?",
+        options: [
+            "Luôn sử dụng tag nhận diện là :latest",
+            "Ký số (Signing) và quét lỗ hổng (Vulnerability Scanning) cho Image trước khi deploy",
+            "Đặt Image ở chế độ public để ai cũng truy cập được",
+            "Không cần cập nhật Image"
+        ],
+        correct: 1,
+        explanation: "Việc ký image (như dùng Cosign) và quét lỗ hổng (như Trivy) giúp đảm bảo image là tin cậy, không bị chỉnh sửa trái phép và hạn chế rủi ro bảo mật."
+    },
+    {
+        question: "Giao thức nào thường được dùng để tạo Overlay Network cho các Container/VM trong Cloud?",
+        options: [
+            "VXLAN / Geneve",
+            "FTP",
+            "Telnet",
+            "POP3"
+        ],
+        correct: 0,
+        explanation: "VXLAN và Geneve là các giao thức đóng gói (encapsulation) phổ biến để xây dựng mạng ảo (overlay) lớp 2 trên nền mạng vật lý lớp 3."
     }
 ];

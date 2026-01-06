@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ôn Thi Cuối Kỳ | Cloud & Mạng Viễn Thông</title>
-    <meta name="description" content="Website ôn thi trắc nghiệm cuối kỳ cho sinh viên - Môn Cloud Computing và Mạng Viễn Thông">
+    <meta name="description"
+        content="Website ôn thi trắc nghiệm cuối kỳ cho sinh viên - Môn Cloud Computing và Mạng Viễn Thông">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Header -->
@@ -64,7 +67,7 @@
                                 <button class="btn btn-primary" onclick="startQuiz('cloud', 'practice')">
                                     <span>📖</span> Ôn tập
                                 </button>
-                                <button class="btn btn-secondary" onclick="startQuiz('cloud', 'exam')">
+                                <button class="btn btn-secondary" onclick="selectExam('cloud')">
                                     <span>⏱️</span> Thi thử
                                 </button>
                             </div>
@@ -228,7 +231,8 @@
                             <div class="circular-progress" id="overall-progress">
                                 <svg viewBox="0 0 100 100">
                                     <circle class="progress-bg" cx="50" cy="50" r="45"></circle>
-                                    <circle class="progress-fill-circle" cx="50" cy="50" r="45" id="progress-circle"></circle>
+                                    <circle class="progress-fill-circle" cx="50" cy="50" r="45" id="progress-circle">
+                                    </circle>
                                 </svg>
                                 <div class="progress-value" id="progress-value">0%</div>
                             </div>
@@ -319,9 +323,27 @@
         </footer>
     </div>
 
+    <!-- Exam Selection Modal -->
+    <div class="modal" id="exam-modal">
+        <div class="modal-overlay" onclick="closeExamModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Chọn đề thi</h2>
+                <button class="modal-close" onclick="closeExamModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="exam-list" id="exam-list">
+                    <!-- Exam options will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="data/cloud-computing.js"></script>
     <script src="data/mang-vien-thong.js"></script>
+    <script src="data/cloud-exams.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

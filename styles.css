@@ -9,32 +9,34 @@
     --bg-secondary: #12121a;
     --bg-card: rgba(20, 20, 30, 0.8);
     --bg-glass: rgba(255, 255, 255, 0.05);
-    
+
     --text-primary: #ffffff;
     --text-secondary: #a0a0b0;
     --text-muted: #606070;
-    
+
     --accent-primary: #6366f1;
     --accent-secondary: #8b5cf6;
     --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-    
+
     --success: #22c55e;
     --error: #ef4444;
     --warning: #f59e0b;
-    
+
     --border-color: rgba(255, 255, 255, 0.1);
     --shadow-color: rgba(0, 0, 0, 0.3);
-    
+
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 24px;
-    
+
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Reset & Base */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -61,7 +63,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: 
+    background:
         radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
         radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
         radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
@@ -172,6 +174,7 @@ body::before {
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -990,80 +993,80 @@ body::before {
         flex-direction: column;
         gap: 16px;
     }
-    
+
     .hero {
         padding: 24px 0 40px;
     }
-    
+
     .hero-subtitle {
         font-size: 16px;
     }
-    
+
     .subjects-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .card-content {
         padding: 24px;
     }
-    
+
     .card-actions {
         flex-direction: column;
     }
-    
+
     .card-actions .btn {
         width: 100%;
     }
-    
+
     .quiz-header {
         padding: 16px;
     }
-    
+
     .progress-bar {
         width: 100px;
     }
-    
+
     .question-card {
         padding: 24px;
     }
-    
+
     .question-text {
         font-size: 18px;
     }
-    
+
     .quiz-actions {
         flex-direction: column-reverse;
     }
-    
+
     .quiz-actions .btn {
         width: 100%;
     }
-    
+
     .result-card {
         padding: 32px 24px;
     }
-    
+
     .score-value {
         font-size: 56px;
     }
-    
+
     .result-details {
         flex-wrap: wrap;
         gap: 24px;
     }
-    
+
     .result-actions {
         flex-direction: column;
     }
-    
+
     .result-actions .btn {
         width: 100%;
     }
-    
+
     .quick-stats {
         grid-template-columns: 1fr;
     }
-    
+
     .nav-btn span:not(.nav-icon) {
         display: none;
     }
@@ -1073,21 +1076,28 @@ body::before {
    ANIMATIONS
    ========================================= */
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.5;
     }
 }
 
 @keyframes shake {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateX(0);
     }
+
     25% {
         transform: translateX(-5px);
     }
+
     75% {
         transform: translateX(5px);
     }
@@ -1113,4 +1123,160 @@ body::before {
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+/* =========================================
+   EXAM MODAL
+   ========================================= */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+}
+
+.modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    max-height: 85vh;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    animation: modalSlide 0.3s ease;
+}
+
+@keyframes modalSlide {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 24px 28px;
+    max-height: calc(85vh - 120px);
+    overflow-y: auto;
+}
+
+.exam-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.exam-option {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background: var(--bg-glass);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+}
+
+.exam-option:hover {
+    border-color: var(--accent-primary);
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+}
+
+.exam-option-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.exam-option-number {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-primary);
+}
+
+.exam-option-time {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.exam-option-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.exam-option-info {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Responsive Exam Modal */
+@media (max-width: 640px) {
+    .exam-list {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        max-height: 90vh;
+    }
 }

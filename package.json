@@ -1,0 +1,23 @@
+{
+  "name": "onthick",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vutd22uit/ONTHICK.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vutd22uit/ONTHICK/issues"
+  },
+  "homepage": "https://github.com/vutd22uit/ONTHICK#readme",
+  "dependencies": {
+    "pdf2json": "^4.0.0"
+  }
+}

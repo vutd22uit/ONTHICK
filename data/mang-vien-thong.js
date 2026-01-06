@@ -562,7 +562,7 @@ const networkQuestions = [
         ],
         correct: 1,
         explanation: "ICMP (Internet Control Message Protocol) được sử dụng bởi ping (kiểm tra connectivity) và traceroute (theo dõi đường đi)."
-    }
+    },
     // SDN (Software-Defined Networking) - Week 5
     {
         question: "Đặc điểm chính của kiến trúc SDN là gì?",
