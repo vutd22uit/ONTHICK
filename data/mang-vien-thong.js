@@ -563,4 +563,115 @@ const networkQuestions = [
         correct: 1,
         explanation: "ICMP (Internet Control Message Protocol) được sử dụng bởi ping (kiểm tra connectivity) và traceroute (theo dõi đường đi)."
     }
+    // SDN (Software-Defined Networking) - Week 5
+    {
+        question: "Đặc điểm chính của kiến trúc SDN là gì?",
+        options: [
+            "Tích hợp Control Plane và Data Plane trên cùng một thiết bị",
+            "Tách biệt Control Plane (điều khiển) và Data Plane (dữ liệu)",
+            "Chỉ sử dụng giao thức định tuyến tĩnh",
+            "Loại bỏ hoàn toàn router vật lý"
+        ],
+        correct: 1,
+        explanation: "SDN tách biệt Control Plane (quyết định đường đi, policy) khỏi Data Plane (chuyển tiếp gói tin), giúp mạng linh hoạt và có thể lập trình được."
+    },
+    {
+        question: "Trong kiến trúc SDN, Control Plane có nhiệm vụ gì?",
+        options: [
+            "Chuyển tiếp gói tin (packet forwarding)",
+            "Mã hóa dữ liệu",
+            "Lập trình và quản lý trạng thái mạng (intent, policy, topology)",
+            "Kết nối vật lý các thiết bị"
+        ],
+        correct: 2,
+        explanation: "Control Plane là 'bộ não' của mạng, chịu trách nhiệm quản lý cấu hình, định tuyến và policy, sau đó đẩy xuống Data Plane."
+    },
+    {
+        question: "Giao thức nào thường được sử dụng cho Southbound Interface trong SDN (giao tiếp giữa Controller và Data Plane)?",
+        options: [
+            "HTTP/REST",
+            "OpenFlow, OVSDB",
+            "SMTP",
+            "FTP"
+        ],
+        correct: 1,
+        explanation: "OpenFlow và OVSDB là các giao thức phổ biến để Controller giao tiếp và lập trình cho các switch ảo (như Open vSwitch) ở Data Plane."
+    },
+    {
+        question: "Overlay Network (Mạng phủ) trong Cloud SDN thường sử dụng giao thức đóng gói nào?",
+        options: [
+            "TCP",
+            "VXLAN, Geneve",
+            "HTTP",
+            "DNS"
+        ],
+        correct: 1,
+        explanation: "VXLAN và Geneve là các giao thức tunneling phổ biến để tạo Overlay Network, cho phép tạo mạng ảo L2 trên nền tảng L3 vật lý."
+    },
+    {
+        question: "Microsegmentation trong SDN giúp cải thiện điều gì?",
+        options: [
+            "Tốc độ mạng",
+            "Bảo mật (Security)",
+            "Khả năng lưu trữ",
+            "Độ trễ"
+        ],
+        correct: 1,
+        explanation: "Microsegmentation cho phép áp dụng chính sách bảo mật chi tiết đến từng máy ảo (VM) hoặc container, hạn chế sự lây lan của tấn công (east-west traffic)."
+    },
+    {
+        question: "Distributed L3 Routing trong OpenStack/OVN mang lại lợi ích gì?",
+        options: [
+            "Tập trung lưu lượng tại một router duy nhất",
+            "Giảm điểm nghẽn (bottleneck) và tối ưu hóa latency cho east-west traffic",
+            "Tăng chi phí phần cứng",
+            "Làm phức tạp cấu hình"
+        ],
+        correct: 1,
+        explanation: "Distributed L3 Routing phân tán chức năng định tuyến đến từng node, giúp VM trên cùng node có thể giao tiếp trực tiếp mà không cần qua router trung tâm."
+    },
+    {
+        question: "Northbound Interface trong SDN dùng để làm gì?",
+        options: [
+            "Giao tiếp với phần cứng mạng",
+            "Giao tiếp với các ứng dụng điều phối (Orchestration) như OpenStack Nova, Kubernetes",
+            "Kết nối nguồn điện",
+            "Lưu trữ log"
+        ],
+        correct: 1,
+        explanation: "Northbound API cho phép các ứng dụng bên ngoài hoặc hệ thống điều phối (Orchestrator) ra lệnh cho SDN Controller."
+    },
+    {
+        question: "Cơ chế 'Service Chaining' trong SDN là gì?",
+        options: [
+            "Kết nối các switch lại với nhau",
+            "Định tuyến lưu lượng qua một chuỗi các dịch vụ mạng (như Firewall -> IPS -> Load Balancer)",
+            "Tăng băng thông mạng",
+            "Thay thế dây cáp mạng"
+        ],
+        correct: 1,
+        explanation: "Service Chaining (SFC) cho phép hướng lưu lượng đi qua một chuỗi các chức năng mạng ảo (VNF) cụ thể theo chính sách."
+    },
+    {
+        question: "Infrastructure as Code (IaC) trong vận hành mạng SDN có nghĩa là gì?",
+        options: [
+            "Viết phần mềm router",
+            "Quản lý cấu hình mạng bằng mã (code, template) thay vì cấu hình thủ công",
+            "Chỉ dùng dòng lệnh CLI",
+            "Không cần quản trị viên"
+        ],
+        correct: 1,
+        explanation: "IaC cho phép định nghĩa, triển khai và quản lý hạ tầng mạng thông qua code (như Ansible, Terraform), giúp tự động hóa và tránh sai sót."
+    },
+    {
+        question: "Controller trong SDN được coi là gì?",
+        options: [
+            "Single point of failure (nếu không có HA)",
+            "Single source of truth (nguồn chân lý duy nhất về trạng thái mạng)",
+            "Thiết bị chuyển mạch",
+            "Máy chủ lưu trữ file"
+        ],
+        correct: 1,
+        explanation: "Controller nắm giữ toàn bộ thông tin và trạng thái của mạng, là 'Single source of truth'. Tuy nhiên, nó cũng cần được triển khai kiểu Cluster (HA) để tránh là Single point of failure."
+    }
 ];

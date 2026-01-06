@@ -1,0 +1,774 @@
+Week 6: Storage Paradigms in Cloud Computing
+NT524 — Cloud Architecture and Security
+PhD. Nguyen Ngoc Tu
+October 15, 2025
+Thuật ngữ:storage paradigms =mô hình lưu trữ; cloud architecture =kiến trúc đám mây
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 1/52
+Outline
+1 Multi tenant SDN review
+2 Cloud storage models
+Block Storage
+Object Storage
+File Storage
+3 Case study: SDN & Storage Networking
+4 Hand-ons
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 2/52
+Learning Objectives
+Motivate storage choices forcost optimizationandresilience.
+Understandblock,object,filestorage models.
+Applydata redundancy: replication, erasure coding, RAID.
+Design forperformance&durabilitywith lifecycle policies.
+Hands-on: OpenStack, AWS, Azure, GCP; backup patterns & validation.
+Thuật ngữ:resilience =khả năng chịu lỗi; redundancy =dư thừa; lifecycle policy =chính sách vòng đời
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 3/52
+Motivation
+Cost:proper tiering, compression/dedupe, lifecycle (hot/warm/cold).
+Resilience:RPO/RTO, multi-AZ/region, tested backups & restores.
+Fit:DB→block; media/backup→object; shared homes→file.
+Thuật ngữ:RPO/RTO =mục tiêu điểm/khôi phục; multi-AZ =đa vùng sẵn sàng
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 4/52
+Multi tenant SDN review
+Big Picture: Underlay vs. Overlay (Single tenant with Transit Subnet)
+vSwitch (OVS/OVN/NSX)
+Neutron/VNET/VPC
+vSwitch (OVS/OVN/NSX)
+Neutron/VNET/VPC
+Private Subnet (overlay)
+Private Subnet (overlay)
+DMZ Subnet (overlay)
+Provider
+Router
+VR
+(tenant)
+Transit Subnet (VR↔DMZ)
+L2 overlay
+east–west overlay
+north–south
+Underlay IP/Eth Underlay IP/Eth
+Underlay IP fabric (L3/ECMP)
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 5/52
+Multi tenant SDN review
+Big Picture: Underlay vs. Overlay (Multi-Tenant Isolation)
+Tenant A
+vSwitch (OVS/OVN/NSX)
+Neutron/VNET/VPC
+Tenant B
+vSwitch (OVS/OVN/NSX)
+Neutron/VNET/VPC
+Private Subnets A (overlay) Private Subnets B (overlay)
+VR A VR B
+Provider
+Router
+L2 overlay L2 overlay
+No direct east–west overlay
+between Tenant A and Tenant B
+north–south north–south
+Underlay IP/Eth Underlay IP/Eth
+Underlay IP fabric (L3/ECMP)
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 6/52
+Multi tenant SDN review
+Overlay–Underlay Mapping (Concepts)
+Underlay:
+Physical IP network (switches, routers, fabric).
+Provides basicIP reachabilitybetween nodes.
+Examples: Data center leaf–spine fabric, WAN backbone.
+Overlay:
+Logical network builton top ofunderlay.
+Encapsulation:VXLAN,GENEVE, NVGRE.
+Creates isolated tenant networks with their own CIDR.
+Decouples tenant addressing from physical topology.
+Underlay↔Overlay Mapping:
+Overlay packets are encapsulated inside underlay IP packets.
+VNI (Virtual Network Identifier, 24 bits)↔Underlay UDP port + IP path.
+Example: Tenant subnet 10.0.1.0/24→VXLAN VNI 5001→transported over underlay IP
+fabric.
+Thuật ngữ:Underlay =Mạng vật lý; Overlay =mạng ảo; Mapping =ánh xạ mạng vật lý - mạng ảo
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 7/52
+Multi tenant SDN review
+Isolation — the Rule of Three
+1 Separate overlay IDs:every tenant owns a uniqueVNIand its own logical switch/router (no
+shared L2/L3).
+2 Default deny across tenants:no A↔B datapath in the vSwitch; only intra-tenant (same VNI) is
+reachable.
+3 Edge mediation if needed:any A↔B must hairpin at theprovider edge/gateway
+(FW/NAT/VRF policy).
+Thuật ngữ:VNI =định danh mạng ảo; default deny =mặc định chặn; hairpin qua edge =đi vòng qua cổng
+biên
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 8/52
+Multi tenant SDN review
+VXLAN Packet Header Syntax
+Outer Ethernet
+14 B
+Outer IP
+IPv4 20 B / IPv6 40 B
+UDP
+8 B, dport=4789
+VXLAN
+8 B
+Original Ethernet + Payload
+VXLAN (8 Bytes):
+0–7:Flags (I=1)
+8–31:Reserved
+32–55:VNI (24 bits)
+56–63:Reserved
+Underlay (dùng để forward):
+–L2:Outer Ethernet —dst/src MAC
+–L3:Outer IP —src/dst IP (VTEP src →VTEP dst)
+–L4:UDP —src port (entropy), dport=4789
+→vSwitch/VTEP endpointsthực hiệnencapsulation
+(add)vàdecapsulation (remove)các header ngoài.
+Overlay (bảo toàn bên trong):
+– Inner Ethernet —dst/src MAC
+– Inner IP —src/dst IP
+– Inner TCP/UDP + Payload
+Thuật ngữ:chỉbọc thêmheader ngoài (8B, cóVNI 24-bit);I=1. Inner (original) TCP/IPkhông mất.
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 9/52
+Multi tenant SDN review
+The only allowed inter-tenant path (A↔B via edge)
+vSwitch / VTEP
+(per host)
+Tenant A
+(VNIA)
+Tenant B
+(VNIB)
+Logical Router
+(tenant/shared)
+Gateway / Provider Edge
+(VRF policy / FW / NAToptional)
+Underlay IP Fabric (tenant agnostic)
+policy enforced at gateway
+Thuật ngữ:VRF (Virtual Routing and Forwarding) =bảng định tuyến ảo; VTEP (VXLAN Tunnel End Point)
+=điểm đầu cuối đường hầm VXLAN; Logical Router =bộ định tuyến logic; NAT optional =NAT chỉ bắt buộc
+khi ra ngoài/khác VRF, không bắt buộc cho A↔B.
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 10/52
+Multi tenant SDN review
+Inter-tenant path in OpenStack (A↔B via L3 routers)
+Tenant A VM
+tapA→qbrA
+Tenant B VM
+tapB→qbrB
+br-int / br-tun (shared per host)
+qrouter-A
+(NAT/FW-A)
+qrouter-B
+(NAT/FW-B)
+br-ex (single per host)
+Underlay IP Fabric (physical network)
+Thuật ngữ:Một host chỉ có 1 br-int, br-tun, br-ex dùng chung.
+Mỗi tenant có router riêng (namespace riêng).
+Luồng inter-tenant: VM-A→br-int→qrouter-A→br-ex→underlay→qrouter-B→br-int→VM-B.
+Không bao giờ có br-int↔br-int trực tiếp!
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 11/52
+Multi tenant SDN review
+Inter-tenant path in AWS (A↔B via Transit Gateway)
+Tenant A EC2
+ENIA →Subnet A
+Tenant B EC2
+ENIB →Subnet B
+VPC-A Router
+(SG/NACL applied at ENI/Subnet)
+VPC-B Router
+(SG/NACL applied at ENI/Subnet)
+TGW Attachment (VPC-A) TGW Attachment (VPC-B)
+AWS Transit Gateway
+(Route Tables / Propagation /optional: AWS Network Firewall or GWLB appliance)
+AWS Global Network (tenant-agnostic underlay)
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 12/52
+Multi tenant SDN review
+Inter-tenant path in Azure (A↔B via vWAN Hub)
+Tenant A VM
+NICA →Subnet A
+Tenant B VM
+NICB →Subnet B
+VNet-A Routing
+(NSG at NIC/Subnet; UDR optional)
+VNet-B Routing
+(NSG at NIC/Subnet; UDR optional)
+vHub Connection (VNet-A) vHub Connection (VNet-B)
+Azure Virtual WAN Hub
+(Route Tables / Propagation /optional: Azure Firewall or NVA via Firewall Manager)
+Microsoft Global Network (tenant-agnostic underlay)
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 13/52
+Cloud storage models
+Storage Taxonomy
+Model Bare-metal Cloud cases Use cases
+BlockLocal SSD / NVMe names-
+pace / SAN LUN
+VM-attached block volume
+(iSCSI / NVMe-oF); low la-
+tency; byte-addressable
+Transactional DBs, boot
+volumes, VM swap disks
+ObjectObject array / archival
+system (tape library, DVD
+archive)-> immutability data
+model
+Key–value object store; flat
+namespace; HTTP(S) API;
+rich metadata;non-POSIX,
+not mounted directly
+Backups, media, analytics
+logs, data lakes
+FileNAS filer / shared folder /
+network drive
+POSIX semantics via NF-
+S/SMB; multi-client mounts;
+metadata ops may bottleneck
+Home directories, content
+repositories, legacy apps
+Thuật ngữ:iSCSI/NVMe-oF =giao thức lưu trữ qua mạng; POSIX =chuẩn giao diện hệ thống tệp; NAS
+(Network-Attached Storage) =thiết bị lưu trữ gắn qua mạng.
+Lưu ý: Objectkhôngmount trực tiếp; nếu dùng FUSE (s3fs/gcsfuse) thìkhông đầy đủ POSIX.
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 14/52
+Cloud storage models
+Storage Access Layers: File vs Block vs Object
+File Storage:
+Access viafile system API(open, read, write, close).
+Provideshierarchical directories, file names, and POSIX semantics.
+Used for user home folders, shared drives (NFS, SMB).
+Example:Accessing files in a NAS share or network drive.
+Block Storage:
+Access viablock device driver(read/write sectors or blocks).
+OS formats the volume with afilesystem (ext4, NTFS)inside.
+Behaves as a raw disk; high IOPS and low latency.
+Example:A virtual volume attached to a VM (like/dev/vdborC:), even if stored as a
+.vhdxfile container.
+Object Storage:
+Access viaHTTP(S) API(GET, PUT, DELETE); no direct filesystem mount.
+Storesimmutable objects= data + metadata + unique ID.
+Flat namespace (no real folders), designed for scalability and durability.
+Example:Uploading a file to Amazon S3 or Ceph via REST API.
+Thuật ngữ:File: truy cập qua API của hệ tệp (thư mục, tên file); Block: truy cập qua driver thiết bị khối
+(sector, volume, filesystem bên trong); Object: truy cập qua API HTTP (object bất biến, không mount trực
+tiếp).
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 15/52
+Cloud storage models Block Storage
+Block Storage Fundamentals
+Concept:Data stored in fixed-size blocks (e.g., 512 B, 4 KB) with logical addressing, similar to
+disk sectors.
+Model:Mutable data model— blocks can be updated in place (read/write), enabling low-latency
+transactional workloads.
+Architecture:Volume service→backend (LVM, Ceph RBD [RADOS Block Device], NVMe-oF,
+iSCSI, SAN). Volumes attach to hypervisors or VMslike virtual disks(.vhdx, .vmdk, or .qcow2).
+Cloud analogues:EBS, Azure Managed Disk, Cinder Volume.
+Attachment:A block volume is typically attached to asingle host. Formulti-attach, a
+clustered filesystem (e.g., GFS2, OCFS2, VMFS on ESXi) orread-only sharedmode is required
+to prevent data corruption.
+Performance:Defined byIOPS(operations per second),throughput(MB/s), andlatency.
+Influenced byqueue depth,block size,caching policy, andtiering strategy. NVMe and
+NVMe-oF now dominate due to microsecond-scale latency.
+Use cases:Databases, VM boot disks, container storage (PV in Kubernetes), snapshots and
+clones for rapid provisioning.
+Thuật ngữ:clustered filesystem =hệ tệp cụm; snapshot =bản chụp nhanh; clone =bản sao nhanh;
+NVMe-oF =chuẩn NVMe qua mạng (fabric).
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 16/52
+Cloud storage models Block Storage
+Block Storage — Control Plane (Who Decides)
+Lifecycle orchestration:API→scheduler→backend driver.
+OpenStack:cinder-api,cinder-scheduler,cinder-volume
+Cloud parallels: EBS control plane, Azure Disk RP, GCP PD manager
+What it handles:provision, attach/detach, resize, migrate, snapshot policy, quotas.
+Replication & consistency:
+Synchronous(zero RPO; higher latency) vsasynchronous(non-zero RPO; geo DR)
+Quorum/journaled replication across failure domains (e.g., Ceph, ONTAP, EBS Multi-AZ)
+Encryption & keys:
+Per-volume keys via KMS: Barbican (OpenStack), AWS KMS, Azure Key Vault, GCP Cloud
+KMS
+Data-at-rest; attach path negotiates keys/policies
+Governance & telemetry:quotas, RBAC, audit; metrics/alarms via
+Ceilometer/CloudWatch/Azure Metrics.
+Thuật ngữ:control plane =mặt phẳng điều khiển; RPO =mục tiêu điểm khôi phục
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 17/52
+Cloud storage models Block Storage
+Block Storage — Data Plane (Who Moves Bytes)
+I/O path:Guest VM→hypervisor (QEMU/KVM/ESXi)→protocol (iSCSI / NVMe-oF
+/ RBD)→storage nodes/backends.
+Ceph example:librbd↔RADOS (striping, replication/EC).
+Performance levers:IOPS, throughput, latency; queue depth, block size, caching,
+tiering.
+Snapshots & clones:CoW or RoW mapping (fast, space-efficient); ideal for gold
+images/instant restores.
+QoS & policy in data path:IOPS/MBps limits, latency targets; placement/tiering
+hints.
+Security in flight:TLS/IPsec for iSCSI/NVMe-oF where required; at-rest encryption
+handled by backend.
+Modern note (2025):NVMe/NVMe-oF widely preferred for microsecond-scale latency
+and offload support.
+Thuật ngữ:data plane =mặt phẳng dữ liệu; CoW/RoW =ghi sao chép/ghi chuyển hướng
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 18/52
+Cloud storage models Block Storage
+Performance Tuning & Reliability (Compact)
+IOPS/Throughput:tunequeue depth(blk-mq/NVMe multi-queue), alignblock sizeto stripe,
+enable request merge for random; multi-path (iSCSI) / ANA (NVMe-oF); NUMA/IRQ pinning.
+Latency (p95/p99):cut underlay hops, verify PMTU; prefer NVMe-oF (RoCE/TCP) forµs
+paths; watch GC/compaction & write amplification.
+Caching/Tiers:host cacheread-through/write-back(BBU/journal); SSD/NVMe hot tier +
+HDD cold tier; FS opts:noatime, scheduled TRIM.
+Reliability:spread across failure domains (disk→host→rack/AZ); RAID10/3×replica =
+low-latency, high space; EC(k+m) = space-efficient, higher CPU/latency, slower rebuild; sync
+(zero RPO) vs async (geo DR).
+QoS/Multi-tenancy:token-bucket min/max +burst credits; enforce at hypervisor/backend;
+fairness via cgroupio.cost/weights; optional DSCP for storage flows.
+Observability/Tests:watch queue depth, device latency, iowait, rebuild; set SLOs on p99; use
+fiowith realisticiodepth,numjobs, R/W mix.
+Thuật ngữ:PMTU =MTU hiệu dụng; ANA =Asymmetric Namespace Access; EC =mã xoá; burst credits =
+tín dụng bùng nổ.
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 19/52
+Cloud storage models Block Storage
+Provider Implementations (Well-known Cloud Examples)
+Provider Tiers / Types Key features & notes
+AWS EBSgp3, io1/io2,io2 Block ExpressAZ-scoped volumes; provisioned IOP-
+S/throughput (gp3 decouples); Multi-Attach
+(io1/io2 on Nitro); snapshots to S3; encryption
+via KMS.
+Azure DisksStandard HDD/SSD, Premium
+SSD,Premium SSD v2, Ultra Disk
+Managed disks; zonal/regional options; Disk
+Encryption Sets; shared disks for clustering;
+bursting on select SKUs.
+GCP Persis-
+tent Disk
+Standard, Balanced, SSD;Hyper-
+disk (Extreme/Throughput)
+Live resize; regional PD; multi-writer (RWX)
+for select types; encryption by default / CMEK.
+OpenStack
+Cinder
+LVM, Ceph RBD, NetApp ON-
+TAP, Dell EMC (PowerFlex/Pow-
+erStore), etc.
+API/scheduler/driver control plane; multi-
+attach since Train; Barbican encryption; per-
+backend QoS/policy.
+VMware
+vSAN
+Clustered NVMe/SSD/HDD pool
+(policy-based)
+Storage policies (RAID 1/5/6, FTT); dedupe/-
+compression; stretched cluster; vSphere inte-
+gration.
+Thuật ngữ:managed disk =đĩa được quản lý tập trung; hyperdisk =ổ đĩa siêu hiệu năng.PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 20/52
+Cloud storage models Block Storage
+Emerging Trends & Integration with Cloud Services
+Disaggregated Storage:NVMe-oF / RoCE / EBOF (Elastic Block Over Fabric)
+decouples compute.
+Smart NIC offload:DPUs handle I/O and encryption, reducing host latency.
+Container Integration:CSI drivers (Cloud Storage Interface) for Kubernetes.
+Hybrid Backups:Snapshots→Object Storage (S3, Azure Blob, GCS).
+Next Wave:zonal replica pools, I/O telemetry for AIOps, ML-based tier optimization.
+Thuật ngữ:disaggregated storage =lưu trữ tách rời tính toán; DPU =bộ xử lý dữ liệu mạng
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 21/52
+Cloud storage models Object Storage
+Object Storage Basics
+Model:bucket/container→object (key, data, metadata).
+Scale:scale-out via sharding/partitioning; billions of objects; large data (logs, media,
+backups).
+Features:pre-signed URL, lifecycle tiers, versioning, server-side encryption.
+Access:HTTP/HTTPS (REST); strong API contracts; eventual &/or strong
+read-after-write consistency (provider-specific).
+Thuật ngữ:pre-signed URL =URL đã ký; server-side encryption =mã hoá phía máy chủ
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 22/52
+Cloud storage models Object Storage
+Internal Architecture & Consistency
+Frontends:stateless API gateways/routers; request auth (sigv4/SAS/OAuth).
+Metadata plane:namespace index, bucket policies, version maps, object manifests.
+Data plane:erasure coding or replicated chunks across failure domains (AZs).
+Placement:partition by key prefix/hash; hot partitions auto-split/merge.
+Consistency:modern clouds offerstrongread-after-write for new puts/overwrites;
+cross-region replication may be async.
+Thuật ngữ:erasure coding =mã hoá xoá; failure domain =miền lỗi
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 23/52
+Cloud storage models Object Storage
+Performance Patterns & Cost Controls
+Throughput:parallelism + multi-part upload; range GET for partial reads.
+Key design:random/hashed prefixes to avoid hot partitions; avoid sequential keys.
+Latency classes:frequent access vs infrequent vs archive; retrieval SLA differs.
+Cost levers:storage class, lifecycle policies, intelligent tiering/auto-class, compression.
+Data access accel:edge caches/CDN; S3 Select/Blob Query for in-place filtering.
+Thuật ngữ:multi-part upload =tải nhiều phần; hot partition =phân vùng nóng
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 24/52
+Cloud storage models Object Storage
+Provider Implementations (Well-known Examples)
+AWS S3:Standard/IA/One Zone-IA/Glacier (Instant/Flexible/Deep Archive),
+Intelligent-Tiering; Access Points; CRR/SRR.
+Azure Blob:Hot/Cool/Archive; immutable policies (time-based/legal hold); SAS;
+hierarchical namespace (Data Lake Gen2).
+GCP Cloud Storage:Standard/Nearline/Coldline/Archive; Autoclass;
+Turbo/dual-region options; uniform IAM.
+OpenStack Swift:proxy + account/container/object rings; EC or replication;
+TempURL; middleware pipeline.
+S3-compatible (on-prem):MinIO, Ceph RGW; CSI for Kubernetes; tiering to public
+clouds.
+Thuật ngữ:SAS =chữ ký truy cập chia sẻ; CRR/SRR =sao chép chéo vùng/cùng vùng
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 25/52
+Cloud storage models Object Storage
+Security, Governance & Emerging Trends
+Identity/Policy:IAM + bucket/container policies; block public access; VPC
+endpoints/PrivateLink.
+Encryption:SSE with provider KMS or customer-managed keys; client-side encryption
+for end-to-end.
+Data protection:Versioning, Object Lock (WORM), replication (same/cross-region),
+integrity checks (ETag/MD5/SHA-256).
+Eventing:native notifications to queues/bus (EventBridge/Event Grid/Pub/Sub) for
+data pipelines.
+Trends:storage-lake convergence (lakehouse), multi-region active/active, governance
+catalogs, zero-ETL analytics on objects.
+Thuật ngữ:WORM =ghi một lần, đọc nhiều lần; PrivateLink =kết nối riêng qua mạng nhà cung cấp
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 26/52
+Cloud storage models File Storage
+File Storage Concepts
+Protocols:NFSv3/v4.1/v4.2, SMB 2/3; POSIX semantics, advisory/mandatory locking.
+Namespace:hierarchical paths, directories, ACLs, quotas.
+Performance:throughput vs concurrency; metadata ops (stat/readdir) are bottlenecks.
+Use cases:home dirs, web content, render farms, EDA/HPC, legacy apps.
+Access modes:multi-client shared (RWX), file/byte-range locking, close-to-open
+consistency (NFS).
+Thuật ngữ:locking =khoá tệp; metadata ops =tác vụ siêu dữ liệu; RWX =đọc-ghi-thực thi dùng chung
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 27/52
+Cloud storage models File Storage
+Internal Architecture & Scale-Out NAS
+Control plane:export/share policies, authN/Z (LDAP/AD, Kerberos), snapshots.
+Data plane:NAS heads→backends (RAID/erasure) via SAS/NVMe; scale-out adds
+multipleheads.
+Metadata:single vs distributed MDS; directory sharding; journaling.
+Parallelization:pNFS layouts (files/objects/blocks); SMB Multichannel; NFS over
+RDMA.
+Multi-protocol:NFS+SMB to same dataset (name-mapping, ACL translation).
+Thuật ngữ:MDS =máy chủ siêu dữ liệu; pNFS =NFS song song; RDMA =truy cập bộ nhớ từ xa
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 28/52
+Cloud storage models File Storage
+Performance, Tuning & Operations
+Throughput vs IOPS:large sequential IO vs small random; many small files hurt.
+Client tuning:NFSrsize/wsize,nconnect, attribute caching; SMB Multichannel,
+credits.
+Latency:network RTT, server CPU, metadata locks; prefer close clients/AZ locality.
+Hotspots:single directory hot keys; hash/fan-out directory design.
+Ops:snapshots/clones, quotas (user/group/project), tiering to object, backups.
+Thuật ngữ:snapshot =bản chụp nhanh; fan-out =toả nhánh
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 29/52
+Cloud storage models File Storage
+Provider Implementations (Well-known Examples)
+AWS EFS:regional, NFSv4.1; classes: Standard/IA; throughput modes:
+Bursting/Provisioned; EFS-to-S3 lifecycle.
+AWS FSx:NetApp ONTAP (NFS/SMB/SnapMirror), Lustre (HPC), OpenZFS;
+multi-AZ options.
+Azure Files:SMB/NFS; tiers Hot/Cool/Premium;ANF(Azure NetApp Files) for high
+IOPS/low latency.
+GCP Filestore:Basic/Enterprise/High Scale; NFSv3/v4.1; regional HA in Enterprise.
+OpenStack Manila:drivers for CephFS, NetApp, GlusterFS, Dell/EMC, etc.; share
+networks, access rules.
+HPC/On-prem:Lustre, IBM Spectrum Scale (GPFS), BeeGFS, Isilon/PowerScale,
+NetApp ONTAP.
+Thuật ngữ:HA =tính sẵn sàng cao
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 30/52
+Cloud storage models File Storage
+Security, Governance & Advanced Patterns
+Identity/ACLs:POSIX vs NFSv4/SMB ACLs; AD/Kerberos; least privilege
+shares/exports.
+Encryption:at-rest (KMS/Key Vault/Cloud KMS) & in-flight (TLS, SMB encryption,
+Kerberos signing).
+Data protection:snapshots, replication (sync/async, cross-AZ/region),
+ransomware-resilient immutable snaps.
+Kubernetes:CSI drivers for RWX; dynamic provisioning; workload-affinity to reduce
+latency.
+Trends:disaggregated NAS over NVMe-oF, DPU offload for crypto/IO, multi-protocol
+data lakes, policy-driven tiering to object.
+Thuật ngữ:immutable snapshot =bản chụp không thể sửa; CSI =giao diện lưu trữ cho container
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 31/52
+Case study: SDN & Storage Networking
+Case Setup & SLOs (Cross-Cloud)
+Workloads & I/O:DB (8–64KB random RW), media render (1–8MB seq), analytics
+(mixed; large scans).
+Protocols:iSCSI / NVMe-oF (block), NFSv4.1/4.2 & SMB 3.x (file).
+SDN overlay:VXLAN/Geneve overhead (≈50–60B)⇒plan MTU/headroom; rely on
+PMTU discovery.
+Routing fabric:east–west via L3 gateways (qrouter/TGW/vWAN/Cloud Router) with
+policy; avoid L2 extension.
+SLO targets:p99 latency (block:≤2–5ms; file:≤5–15ms), sustained throughput
+(GB/s), durability (nines), RPO/RTO.
+Policy/QoS:DSCP marking at host; per-class queues; IOPS/MBps limits where
+supported.
+Thuật ngữ:PMTU =phát hiện MTU đường đi; east–west =luồng nội bộ giữa VNET/VPC/VN
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 32/52
+Case study: SDN & Storage Networking
+OpenStack (OVN) — iSCSI/NFS/NVMe-oF
+Overlay/MTU:ML2/OVN (Geneve). Set tenant MTU (e.g., 1450/9000-overhead) and
+underlay MTU consistently; verify withtracepath/ping -M do.
+Cinder (block):iSCSI or Ceph RBD. For iSCSI: dm-multipath,no_path_retry, udev
+rules; for NVMe-oF: enable NVMe multipath.
+Manila (file):NFS/SMB exports via share networks; align export subnet with router
+namespaces; security groups→minimal, allow only storage flows.
+Routing/policy:Inter-tenant via logical routers→gateway chassis (NAT optional).
+OVN ACLs at LR/LSP; ECMP for scale.
+QoS/DSCP:Neutron QoS (rate limit) + OVN QoS rules; DSCP mark on instances
+(tc/iptables mangle)→preserve in underlay if supported.
+Validate:fio(iodepth sweep),iperf3(parallel flows),ovn-trace(policy path),
+ovn-appctllatency.
+Thuật ngữ:ECMP =cân bằng tải đa đường; LR/LSP =router/port logic
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 33/52
+Case study: SDN & Storage Networking
+AWS (Transit Gateway) — EFS/FSx & Hybrid iSCSI
+File services: EFS(NFSv4.1) for shared POSIX;FSx for ONTAP(NFS/SMB/iSCSI
+features) orFSx for Lustre(HPC).
+Block paths:EBS is local to EC2 (no network). For SAN-like iSCSI, use FSx/ONTAP or
+on-prem SAN via DX/VPN.
+SDN path:VPC↔TGW (route tables per attachment); insertNetwork
+Firewall/GWLBfor policy.
+MTU/PMTU:Use provider defaults per ENI/VPC; verify withtracepathacross
+TGW/ENI and DX/VPN to avoid fragmentation.
+QoS/DSCP:Mark at EC2; preserve across appliances; use policing on NVA if needed
+(not native in VPC fabric).
+Tuning:EFS throughput mode (Bursting/Provisioned), concurrency via multiple NFS
+clients; FSx/ONTAP: junctions, aggregates, FlexVol/QoS.
+Validate:fioon EFS mount (nconnect),nfsstat, CW metrics (PercentIOLimit),mtr
+across TGW.
+Thuật ngữ:DX =Direct Connect; GWLB =cân bằng tải cổng
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 34/52
+Case study: SDN & Storage Networking
+Azure (vWAN/Hub-VNet) — ANF & Azure Files
+File services: Azure NetApp Files (ANF)for high IOPS/low latency (NFS/SMB);
+Azure Files(SMB/NFS) for broad compatibility.
+SDN path:Spoke VNets↔vWAN Hubor Hub-VNet; centralized policy viaAzure
+Firewall/NVA; UDR for steering.
+Identity/ACL:AD/Kerberos for SMB; POSIX modebits/ACLs for NFS; carefully map
+IDs across domains.
+MTU/PMTU:Keep consistent per NIC/vNIC and gateways; validate PMTU on
+ER/VPN paths; avoid L2 stretch, prefer routed.
+QoS:ANF capacity pools/volume QoS; Azure Files tiers (Hot/Cool/Premium); traffic
+shaping on NVA.
+Validate:fioover NFS/SMB,nfsstat/smbstatus, Connection Monitor,pspingfor
+tail latency.
+Thuật ngữ:UDR =định tuyến do người dùng; ER =ExpressRoute
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 35/52
+Case study: SDN & Storage Networking
+GCP (Cloud Router) — Filestore & Hybrid NVMe-oF
+File services: Filestore(NFSv3/v4.1) tiers: Basic/Enterprise/High Scale; regional HA in
+Enterprise.
+Block/high-perf:For extreme IOPS, consider local SSD or Hyperdisk (for DB) +
+app-level sharding; NVMe-oF usually via partner NVAs.
+SDN path:VPCs viaVPC peeringorCloud RouteracrossCloud Interconnect/VPN;
+centralize policy with firewalls/NVAs.
+MTU/PMTU:Keep per-VPC/NIC consistent; verify PMTU across Interconnect; avoid
+fragmentation on storage flows.
+QoS/DSCP:Mark at VM; enforce in NVAs; use Filestore performance guidance (num
+threads, rsize/wsize).
+Validate:fioprofiles (randread/randwrite, bs=4k/64k/1m),iperf3with multiple
+streams,traceroute/tracepath.
+Thuật ngữ:Interconnect =kết nối chuyên dụng tới GCP; NVA =thiết bị ảo mạng
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 36/52
+Case study: SDN & Storage Networking
+Data Redundancy
+Replication (x3):improves availability and reads; higher cost.
+Erasure coding (k+m):capacity efficiency=k/(k+m); overhead= (k+m)/k; best
+for cold/large objects.
+RAID:0/1/5/6/10; parity write penalties; rebuild risk windows.
+Durability vs availability:data loss vs uptime.
+Thuật ngữ:erasure coding =mã xoá; availability =khả dụng
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 37/52
+Hand-ons
+Cloud Mapping (OpenStack / AWS / Azure / GCP)
+Need OpenStack AWS Azure / GCP
+Block Cinder (LVM/Ceph) EBS (gp3, io1/io2;
+Multi-Attach)
+Managed Disks / PD
+(balanced/ssd)
+Object Swift (replication/EC) S3 (strong consistency) Blob / GCS (Std/Near/-
+Cold/Archive)
+File Manila (NFS/SMB) EFS / FSx Azure Files (SMB/NFS)
+/ Filestore
+Keys Barbican KMS Key Vault / KMS
+Backup Snapshots→object EBS snapshots→S3 Snapshots→Blob/GCS
+Thuật ngữ:strong consistency =nhất quán mạnh; Filestore =dịch vụ NFS GCP
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 38/52
+Hand-ons
+Hands-on: OpenStack
+Goal:Cinder/Swift/Manila via Ansible; snapshot & verified restore.
+1 Createvolume type+QoS; attach to VM; format/mount; runfio.
+2 Swift container; upload; setX-Delete-After; verify expiry.
+3 Manila NFS share; IP access; mount on 2 VMs; test locks/concurrent writes.
+4 Snapshot volume; archive to Swift;restoreto new VM; verify SHA-256.
+Thuật ngữ:QoS =chất lượng dịch vụ; expiry =hết hạn; SHA-256 =băm kiểm toàn vẹn
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 39/52
+Hand-ons
+Ansible: Volume Type + QoS (OpenStack)
+- hosts: controller
+tasks:
+- name: Create QoS and volume type, then associate
+openstack.cloud.qos:
+state: present
+name: ssd-qos
+specs:
+total_iops_sec: "3000"
+- name: Create volume type
+openstack.cloud.volume_type:
+state: present
+name: ssd-qos-type
+- name: Associate QoS to type
+openstack.cloud.volume_type:
+state: present
+name: ssd-qos-type
+qos_specs: ssd-qos
+- name: Create 20GB volume using the type
+openstack.cloud.volume:
+state: present
+name: wk6-db-vol
+size: 20
+volume_type: ssd-qos-type
+Thuật ngữ:associate =liên kết; volume type =kiểu volume
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 40/52
+Hand-ons
+Manila NFS: Export & Mount (OpenStack)
+- hosts: controller
+tasks:
+- name: Create NFS share
+openstack.cloud.share:
+state: present
+name: wk6-share
+size: 10
+share_proto: NFS
+is_public: false
+register: create_share
+- name: Get export location
+openstack.cloud.share_info:
+name: wk6-share
+register: share_info
+- set_fact:
+wk6_share_export: "{{ share_info.shares[0].export_locations[0].path }}"
+- hosts: apps
+become: true
+tasks:
+- apt: { name: nfs-common, state: present }
+- mount:
+path: /srv/shared
+src: "{{ hostvars[’controller’][’wk6_share_export’] }}"
+fstype: nfs
+opts: "_netdev,nofail,timeo=600,retrans=2"
+state: mounted
+Thuật ngữ:export location =đường chia sẻ; netdev/nofail=tuýchångŋnkÿtantoănkhikhðiØëng
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 41/52
+Hand-ons
+Swift Lifecycle & Backup (OpenStack)
+- hosts: controller
+tasks:
+- name: Create container with metadata
+openstack.cloud.object_container:
+state: present
+name: wk6-backups
+metadata: { "retention": "180d" }
+- name: Upload with expiry (X-Delete-After)
+openstack.cloud.object:
+state: present
+container: wk6-backups
+name: snap-{{ ansible_date_time.epoch }}.raw
+filename: /tmp/snap.raw
+headers:
+X-Delete-After: "15552000"# 180 days
+- name: Create snapshot
+openstack.cloud.volume_snapshot:
+state: present
+name: wk6-db-snap-{{ ansible_date_time.date }}
+volume: wk6-db-vol
+force: true
+Thuật ngữ:retention =lưu giữ; snapshot =bản chụp nhanh
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 42/52
+Hand-ons
+Hands-on: AWS
+Goal:EBS (gp3/io2, Multi-Attach), S3 (strong consistency), EFS.
+1 Create EBS gp3; attach to EC2; benchmarkfio; try Multi-Attach with a cluster FS.
+2 S3 bucket: enable versioning; pre-signed URL; lifecycle to Glacier.
+3 EFS: mount from 2 EC2; test locks; observe CloudWatch metrics.
+Thuật ngữ:Multi-Attach =gắn nhiều phiên; Glacier =lưu trữ lạnh
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 43/52
+Hand-ons
+Hands-on: Azure
+Goal:Managed Disks, Blob, Azure Files (SMB/NFS, Premium).
+1 Managed Disk: attach to VM;fiogp/premium; monitor IOPS.
+2 Blob: container, SAS tokens, lifecycle (cool/archive); test restore.
+3 Azure Files: SMB or NFS (Premium); try SMB Multichannel if supported.
+Thuật ngữ:SAS =chữ ký chia sẻ; Multichannel =đa kênh SMB
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 44/52
+Hand-ons
+Hands-on: GCP
+Goal:Persistent Disk (pd-balanced/pd-ssd), Cloud Storage (Std/Near/Cold/Archive),
+Filestore.
+1 PD: attach to GCE; runfio; snapshots.
+2 Cloud Storage: classes; signed URL; lifecycle; check retrieval cost.
+3 Filestore: NFS mount from 2 VMs; test POSIX locks.
+Thuật ngữ:GCE =máy ảo GCP; PD =đĩa bền
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 45/52
+Hand-ons
+Performance & Cost
+Benchmark:fio4k randread (QD=1/16/32), 4k 70/30, 1M sequential; record
+p50/p95/p99.
+Tiers:hot/warm/cold; compression; columnar formats (Parquet/ORC) for analytics.
+Egress/requests:batch, CDN, concurrency.
+FinOps:track/TB-month,/IOPS; prune orphaned snapshots.
+Thuật ngữ:p50/p95/p99 =bách phân vị; egress =dữ liệu ra
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 46/52
+Hand-ons
+Security & Compliance
+At rest:LUKS, backend-native, KMS/Barbican; per-project keys.
+In transit:TLS/mTLS; NFS/SMB encryption where supported; IPsec for iSCSI if needed.
+Access:RBAC/ABAC; bucket policies; block public access; least privilege.
+Immutability:WORM/object lock; protect snapshots/backups from deletion.
+Thuật ngữ:ABAC =kiểm soát theo thuộc tính; WORM =ghi một lần đọc nhiều lần
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 47/52
+Hand-ons
+Threat Model (STRIDE) for Storage
+Spoofing:unauthorized bucket access⇒IAM/RBAC, short-lived pre-signed URLs.
+Tampering:object/volume modification⇒versioning, WORM, checksum, signatures.
+Repudiation:missing audit⇒enable logs (Cinder/Manila/Swift/EBS/S3/EFS).
+Information Disclosure:public buckets, exposed snapshots⇒policies & encryption.
+DoS:IO storms⇒QoS limits; API rate limits.
+EoP:container/hypervisor escape⇒patching, network policy, isolated IAM.
+Thuật ngữ:audit =ghi nhật ký kiểm toán; rate limit =giới hạn tốc độ yêu cầu
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 48/52
+Hand-ons
+Decision Flow
+1 Access pattern?random vs sequential; small vs large objects.
+2 Consistency?strong vs eventual; single vs multi-region.
+3 Failure domain?disk/node/AZ/region.
+4 SLO & Cost?p95 latency,/TB-month,/IOPS.
+5 Governance?PII, retention, immutability, legal hold.
+Thuật ngữ:failure domain =miền lỗi; governance =quản trị dữ liệu
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 49/52
+Hand-ons
+Comparison: Services & Features
+OpenStack AWS Azure GCP
+Block Cinder (QoS,
+snapshots)
+EBS (gp3, io2,
+Multi-Attach)
+Managed Disks
+(Std/Premium)
+PD (standard/bal-
+anced/ssd)
+Object Swift (replication/EC) S3 (strong R/W/LIST) Blob
+(hot/cool/archive)
+GCS (Std/Near/-
+Cold/Archive)
+File Manila (NFS/SMB) EFS/FSx Azure Files
+(SMB/NFS)
+Filestore (NFS)
+Consistency Backend-dependent Strong Strong (Blob) Strong reads (ops vary)
+Keys Barbican KMS Key Vault KMS
+Notes OVN SDN common Nitro + NVMe SMB Multichannel Regional/multi-reg
+buckets
+Thuật ngữ:LIST =liệt kê; Nitro =ảo hoá phần cứng AWS; Multichannel =đa kênh SMB
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 50/52
+Hand-ons
+Assessment & Deliverables
+Report (2–3 pages):architecture for 3 workloads; technical & cost rationale; clear SLOs.
+Evidence:screenshots: volumes/attach, buckets/containers, share mounts,fio, restores.
+Files:playbooks, scripts, lifecycle, recovery runbook.
+Rubric (10 pts):functionality (4), performance (2), security (2), docs (2).
+Thuật ngữ:runbook =sổ tay quy trình; rubric =thang điểm chi tiết
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 51/52
+Hand-ons
+Wrap-up
+Match block/object/file to workload and budget.
+Choose redundancy wisely (replication/EC/RAID), encrypt, apply lifecycle.
+SDN impacts storage data paths: MTU, QoS, multipath.
+Next: Container Fundamentals.
+Thuật ngữ:data plane =mặt phẳng dữ liệu; control plane =mặt phẳng điều khiển
+PhD. Nguyen Ngoc Tu Week 6: Storage Paradigms in Cloud Computing October 15, 2025 52/52
