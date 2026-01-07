@@ -89,10 +89,9 @@ function initNavigation() {
 // VIEW MANAGEMENT
 // =========================================
 function showView(viewName) {
-    // Stop timer if leaving quiz
     if (state.currentView === 'quiz' && viewName !== 'quiz') {
         stopTimer();
-        stopAntiCheatMonitor(); // Stop anti-cheat when leaving quiz view
+        // stopAntiCheatMonitor();
     }
 
     document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
@@ -188,13 +187,7 @@ function startQuiz(subject, mode, examId = null) {
     }
 
     showView('quiz');
-    renderNavigationGrid(); // Render grid
     showQuestion(0);
-
-    // Enable Anti-Cheat for Exam Mode
-    if (mode === 'exam') {
-        startAntiCheatMonitor();
-    }
 }
 
 // Show exam selection modal for Cloud Computing
@@ -261,8 +254,10 @@ function showQuestion(index) {
 
     // Update progress bar
     const progress = ((index) / state.questions.length) * 100;
+    // document.getElementById('quiz-progress-bar').style.width = `${progress}%`;
+    // updateNavigationGrid(); // Update grid highlights
+    // Removed Grid Call
     document.getElementById('quiz-progress-bar').style.width = `${progress}%`;
-    updateNavigationGrid(); // Update grid highlights
 
     // Update question text
     document.getElementById('question-text').textContent = question.question;
@@ -272,39 +267,42 @@ function showQuestion(index) {
     answersContainer.innerHTML = '';
 
     const labels = ['A', 'B', 'C', 'D'];
-    const userAnswer = state.userAnswers[index]; // Get stored answer
+
+    // Check if already answered to restore view (for Practice mode mostly)
+    // Note: Since we only store Answer Index now, we can check state.userAnswers[index]
+    const savedAnswer = state.userAnswers[index];
 
     question.options.forEach((option, i) => {
         const div = document.createElement('div');
         div.className = 'answer-option';
-        div.dataset.index = i;
-        div.innerHTML = `
-            <span class="answer-label">${labels[i]}</span>
-            <span class="answer-text">${option}</span>
-            <span class="answer-icon"></span>
-        `;
-        div.addEventListener('click', () => selectAnswer(i));
 
-        // Restore state if answered
-        if (userAnswer !== null) {
-            if (state.currentMode === 'exam') {
-                // Exam Mode: Just highlight selected
-                if (i === userAnswer) {
-                    div.classList.add('selected');
-                }
-            } else {
-                // Practice Mode: Show full results
-                div.classList.add('disabled');
-                if (i === userAnswer) {
-                    div.classList.add('selected');
-                    div.classList.add(i === question.correct ? 'correct' : 'wrong');
-                    div.querySelector('.answer-icon').textContent = i === question.correct ? '✓' : '✗';
-                }
-                if (i === question.correct && userAnswer !== question.correct) {
+        // Restore selected/correct/wrong state immediately
+        if (savedAnswer !== null && savedAnswer !== undefined) {
+            div.classList.add('disabled');
+            if (i === savedAnswer) {
+                div.classList.add('selected');
+                if (i === question.correct) {
                     div.classList.add('correct');
-                    div.querySelector('.answer-icon').textContent = '✓';
+                    div.innerHTML = `<span class="answer-label" style="background:var(--success)">${labels[i]}</span><span class="answer-text">${option}</span><span class="answer-icon">✓</span>`;
+                } else {
+                    div.classList.add('wrong');
+                    div.innerHTML = `<span class="answer-label" style="background:var(--error)">${labels[i]}</span><span class="answer-text">${option}</span><span class="answer-icon">✗</span>`;
                 }
+            } else if (i === question.correct) {
+                div.classList.add('correct');
+                div.innerHTML = `<span class="answer-label" style="background:var(--success)">${labels[i]}</span><span class="answer-text">${option}</span><span class="answer-icon">✓</span>`;
+            } else {
+                // Unselected option
+                div.innerHTML = `<span class="answer-label">${labels[i]}</span><span class="answer-text">${option}</span><span class="answer-icon"></span>`;
             }
+        } else {
+            // Not answered
+            div.innerHTML = `
+                <span class="answer-label">${labels[i]}</span>
+                <span class="answer-text">${option}</span>
+                <span class="answer-icon"></span>
+            `;
+            div.addEventListener('click', () => selectAnswer(i));
         }
 
         answersContainer.appendChild(div);
@@ -313,18 +311,18 @@ function showQuestion(index) {
     // Hide explanation initially
     document.getElementById('answer-explanation').classList.add('hidden');
 
-    // Show explanation if answered in Practice mode
-    if (userAnswer !== null && state.currentMode === 'practice' && question.explanation) {
+    // Show explanation if answered
+    if (savedAnswer !== null && savedAnswer !== undefined && question.explanation) {
         document.getElementById('explanation-text').textContent = question.explanation;
         document.getElementById('answer-explanation').classList.remove('hidden');
     }
 
     // Update Next button
     const nextBtn = document.getElementById('next-btn');
-    if (state.currentMode === 'practice') {
-        nextBtn.disabled = userAnswer === null; // Disable in practice until answered
+    if (savedAnswer !== null && savedAnswer !== undefined) {
+        nextBtn.disabled = false;
     } else {
-        nextBtn.disabled = false; // Always enabled in exam to skip
+        nextBtn.disabled = true;
     }
 
     nextBtn.innerHTML = index < state.questions.length - 1
@@ -334,67 +332,26 @@ function showQuestion(index) {
 
 function selectAnswer(answerIndex) {
     const question = state.questions[state.currentQuestionIndex];
-    const options = document.querySelectorAll('.answer-option');
 
-    // PRACTICE MODE: Prevent changing answer if already answered
-    if (state.currentMode === 'practice' && state.userAnswers[state.currentQuestionIndex] !== null) {
-        return;
+    // In original logic, clicking generally locked the answer (like practice mode)
+    // To keep it simple and stable as requested: ALWAYS show correct/wrong immediately.
+    // This is the safest "Revert to Original" behavior.
+
+    if (state.userAnswers[state.currentQuestionIndex] !== null && state.userAnswers[state.currentQuestionIndex] !== undefined) {
+        return; // Already answered
     }
 
     // Store answer
     state.userAnswers[state.currentQuestionIndex] = answerIndex;
 
-    updateNavigationGrid(); // Mark as answered in grid
-
-    // EXAM MODE: Just highlight selection, allow changing
-    if (state.currentMode === 'exam') {
-        options.forEach((option, i) => {
-            option.classList.remove('selected', 'correct', 'wrong', 'disabled'); // Reset
-            // option.classList.add('disabled'); // Don't disable in exam mode to allow changing
-
-            if (i === answerIndex) {
-                option.classList.add('selected');
-                // Don't show icon yet
-            }
-        });
-        return; // Exit, don't show results yet
-    }
-
-    // PRACTICE MODE: Show results immediately
     const isCorrect = answerIndex === question.correct;
     if (isCorrect) {
         state.correctAnswers++;
     }
 
-    // Update UI for Practice
-    options.forEach((option, i) => {
-        option.classList.add('disabled');
-
-        if (i === answerIndex) {
-            option.classList.add('selected');
-            if (isCorrect) {
-                option.classList.add('correct');
-                option.querySelector('.answer-icon').textContent = '✓';
-            } else {
-                option.classList.add('wrong');
-                option.querySelector('.answer-icon').textContent = '✗';
-            }
-        }
-
-        if (i === question.correct && !isCorrect) {
-            option.classList.add('correct');
-            option.querySelector('.answer-icon').textContent = '✓';
-        }
-    });
-
-    // Show explanation in practice mode
-    if (question.explanation) {
-        document.getElementById('explanation-text').textContent = question.explanation;
-        document.getElementById('answer-explanation').classList.remove('hidden');
-    }
-
-    // Enable next button
-    document.getElementById('next-btn').disabled = false;
+    // Since we re-render in showQuestion mostly, but here we can just update current DOM for speed
+    // OR just call showQuestion(state.currentQuestionIndex) to re-render using the logic above
+    showQuestion(state.currentQuestionIndex);
 }
 
 function nextQuestion() {
@@ -407,7 +364,7 @@ function nextQuestion() {
 
 function finishQuiz() {
     stopTimer();
-    stopAntiCheatMonitor(); // Stop anti-cheat when quiz finishes
+    // stopAntiCheatMonitor(); 
     state.quizCompleted = true;
 
     // Calculate results
@@ -455,7 +412,7 @@ function finishQuiz() {
 function exitQuiz() {
     if (state.quizCompleted || confirm('Bạn có chắc muốn thoát? Tiến độ sẽ bị mất.')) {
         stopTimer();
-        stopAntiCheatMonitor(); // Stop anti-cheat when exiting quiz
+        // stopAntiCheatMonitor();
         showView('home');
     }
 }
