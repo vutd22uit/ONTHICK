@@ -96,6 +96,14 @@ function startQuiz(subject, mode, examId = null) {
         allQuestions = networkQuestions;
     } else if (subject === 'security') {
         allQuestions = securityCloudQuestions;
+    } else if (subject === 'security-ch1') {
+        allQuestions = securityCh1Questions;
+    } else if (subject === 'security-ch2') {
+        allQuestions = securityCh2Questions;
+    } else if (subject === 'security-ch3') {
+        allQuestions = securityCh3Questions;
+    } else if (subject === 'security-ch4') {
+        allQuestions = securityCh4Questions;
     }
 
     // Handle exam mode with specific exam
@@ -124,6 +132,9 @@ function startQuiz(subject, mode, examId = null) {
         subjectName = 'Mạng Viễn Thông';
     } else if (subject === 'security') {
         subjectName = 'Security Cloud';
+    } else if (subject.startsWith('security-ch')) {
+        const ch = subject.split('ch')[1];
+        subjectName = `Security Ch ${ch}`;
     }
     let modeName = mode === 'practice' ? 'Chế độ ôn tập' : 'Chế độ thi thử';
     if (state.currentExam) {
@@ -431,6 +442,9 @@ function saveQuizResult(score, timeSpent) {
         subjectName = 'Mạng Viễn Thông';
     } else if (state.currentSubject === 'security') {
         subjectName = 'Security Cloud';
+    } else if (state.currentSubject.startsWith('security-ch')) {
+        const ch = state.currentSubject.split('ch')[1];
+        subjectName = `Security Ch ${ch}`;
     }
 
     history.unshift({
@@ -475,16 +489,36 @@ function updateHomeStats() {
     // Per-subject completed
     const cloudHistory = history.filter(h => h.subject === 'cloud');
     const networkHistory = history.filter(h => h.subject === 'network');
-    const securityHistory = history.filter(h => h.subject === 'security');
 
-    document.getElementById('cloud-completed').textContent = cloudHistory.length * SETTINGS.questionsPerQuiz;
-    document.getElementById('network-completed').textContent = networkHistory.length * SETTINGS.questionsPerQuiz;
-    document.getElementById('security-completed').textContent = securityHistory.length * SETTINGS.questionsPerQuiz;
+    if (document.getElementById('cloud-completed'))
+        document.getElementById('cloud-completed').textContent = cloudHistory.length * SETTINGS.questionsPerQuiz;
+    if (document.getElementById('network-completed'))
+        document.getElementById('network-completed').textContent = networkHistory.length * SETTINGS.questionsPerQuiz;
 
-    // Update total questions
-    document.getElementById('cloud-total').textContent = typeof cloudQuestions !== 'undefined' ? cloudQuestions.length : 50;
-    document.getElementById('network-total').textContent = typeof networkQuestions !== 'undefined' ? networkQuestions.length : 50;
-    document.getElementById('security-total').textContent = typeof securityCloudQuestions !== 'undefined' ? securityCloudQuestions.length : 50;
+    // Security Chapters Stats
+    ['ch1', 'ch2', 'ch3', 'ch4'].forEach(ch => {
+        const subId = `security-${ch}`;
+        const chHistory = history.filter(h => h.subject === subId);
+        const completedEl = document.getElementById(`${subId}-completed`);
+        const totalEl = document.getElementById(`${subId}-total`);
+
+        if (completedEl) completedEl.textContent = chHistory.length * SETTINGS.questionsPerQuiz;
+
+        if (totalEl) {
+            let total = 0;
+            if (ch === 'ch1' && typeof securityCh1Questions !== 'undefined') total = securityCh1Questions.length;
+            else if (ch === 'ch2' && typeof securityCh2Questions !== 'undefined') total = securityCh2Questions.length;
+            else if (ch === 'ch3' && typeof securityCh3Questions !== 'undefined') total = securityCh3Questions.length;
+            else if (ch === 'ch4' && typeof securityCh4Questions !== 'undefined') total = securityCh4Questions.length;
+            totalEl.textContent = total;
+        }
+    });
+
+    // Update total questions for main IDs if they exist
+    if (document.getElementById('cloud-total'))
+        document.getElementById('cloud-total').textContent = typeof cloudQuestions !== 'undefined' ? cloudQuestions.length : 50;
+    if (document.getElementById('network-total'))
+        document.getElementById('network-total').textContent = typeof networkQuestions !== 'undefined' ? networkQuestions.length : 50;
 }
 
 function updateStatsView() {
@@ -493,9 +527,12 @@ function updateStatsView() {
     // Overall progress
     const totalQuestions = (typeof cloudQuestions !== 'undefined' ? cloudQuestions.length : 50) +
         (typeof networkQuestions !== 'undefined' ? networkQuestions.length : 50) +
-        (typeof securityCloudQuestions !== 'undefined' ? securityCloudQuestions.length : 50);
+        (typeof securityCh1Questions !== 'undefined' ? securityCh1Questions.length : 0) +
+        (typeof securityCh2Questions !== 'undefined' ? securityCh2Questions.length : 0) +
+        (typeof securityCh3Questions !== 'undefined' ? securityCh3Questions.length : 0) +
+        (typeof securityCh4Questions !== 'undefined' ? securityCh4Questions.length : 0);
     const answeredQuestions = history.reduce((sum, h) => sum + h.total, 0);
-    const progressPercent = Math.min(100, Math.round((answeredQuestions / totalQuestions) * 100));
+    const progressPercent = totalQuestions > 0 ? Math.min(100, Math.round((answeredQuestions / totalQuestions) * 100)) : 0;
 
     document.getElementById('progress-value').textContent = progressPercent + '%';
 
@@ -530,8 +567,8 @@ function updateStatsView() {
             Math.max(...networkHistory.map(h => h.score)) + '%';
     }
 
-    // Security stats
-    const securityHistory = history.filter(h => h.subject === 'security');
+    // Security stats - Overall (legacy support)
+    const securityHistory = history.filter(h => h.subject === 'security' || h.subject.startsWith('security-ch'));
     if (securityHistory.length > 0) {
         const securityDoneEl = document.getElementById('security-stats-done');
         const securityAccuracyEl = document.getElementById('security-stats-accuracy');

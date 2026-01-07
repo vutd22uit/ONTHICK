@@ -2,8 +2,8 @@
    SECURITY CLOUD - QUESTION BANK (NT524)
    ========================================= */
 
-const securityCloudQuestions = [
-    // --- CHƯƠNG 1: GIỚI THIỆU HỆ THỐNG ĐÁM MÂY (1-33) ---
+// --- CHƯƠNG 1: GIỚI THIỆU HỆ THỐNG ĐÁM MÂY (1-33) ---
+const securityCh1Questions = [
     {
         question: "Đặc tính nào của NIST cho phép người dùng tự cấp phát tài nguyên (như server, storage) mà không cần tương tác trực tiếp với nhân viên nhà cung cấp?",
         options: ["Broad network access", "Resource pooling", "On-demand self-service", "Measured service"],
@@ -201,9 +201,11 @@ const securityCloudQuestions = [
         options: ["Chia nhỏ mạng để giới hạn truy cập ngang (east-west)", "Làm mạng chạy nhanh hơn", "Giảm số lượng IP", "Tăng cường kết nối internet"],
         correct: 0,
         explanation: "Micro-segmentation ngăn chặn sự lan rộng của tấn công bên trong mạng."
-    },
+    }
+];
 
-    // --- CHƯƠNG 2: MÔ HÌNH DỊCH VỤ CLOUD (34-66) ---
+// --- CHƯƠNG 2: MÔ HÌNH DỊCH VỤ CLOUD (34-66) ---
+const securityCh2Questions = [
     {
         question: "Trong mô hình PaaS (Platform as a Service), khách hàng quản lý thành phần nào?",
         options: ["Hệ điều hành (OS)", "Ứng dụng và Dữ liệu", "Mạng vật lý", "Lớp ảo hóa"],
@@ -401,9 +403,11 @@ const securityCloudQuestions = [
         options: ["Tiết kiệm tiền bằng mọi giá", "Đảm bảo doanh nghiệp đạt được mục tiêu kinh doanh với chi phí thấp nhất", "Không mua server", "Dùng server miễn phí"],
         correct: 1,
         explanation: "Tối ưu hóa chứ không phải chỉ là cắt giảm."
-    },
+    }
+];
 
-    // --- CHƯƠNG 3: VIRTUAL MACHINE TECHNOLOGY (67-100) ---
+// --- CHƯƠNG 3: VIRTUAL MACHINE TECHNOLOGY (67-100) ---
+const securityCh3Questions = [
     {
         question: "Hypervisor loại 1 (Bare-metal) là gì?",
         options: ["Chạy trên một hệ điều hành chủ", "Chạy trực tiếp trên phần cứng máy chủ", "Là một phần mềm Office", "Dành cho máy tính cá nhân"],
@@ -607,9 +611,11 @@ const securityCloudQuestions = [
         options: ["os_server", "yum", "copy", "service"],
         correct: 0,
         explanation: "os_server (nay thuộc openstack.cloud.server) là module chính để provisioning VM."
-    },
+    }
+];
 
-    // --- CHƯƠNG 4: CƠ SỞ VỀ MẠNG ẢO (VIRTUAL NETWORKS) (101-150) ---
+// --- CHƯƠNG 4: CƠ SỞ VỀ MẠNG ẢO (VIRTUAL NETWORKS) (101-150) ---
+const securityCh4Questions = [
     {
         question: "Mạng Underlay trong trung tâm dữ liệu đám mây thường là mạng:",
         options: ["Mạng logic được tạo ra bởi phần mềm.", "Hạ tầng mạng vật lý bao gồm switch, router và cáp quang.", "Mạng chạy bên trong hệ điều hành máy ảo.", "Mạng dùng để lưu trữ dữ liệu database."],
@@ -689,7 +695,7 @@ const securityCloudQuestions = [
         explanation: "Đóng gói thêm header mới để định tuyến qua hạ tầng Underlay."
     },
     {
-        question: "Tại sao mạng Underlay hiện đại thường sử dụng định tuyến L3 thay vì L2?",
+        question: "Tại giờ mạng Underlay hiện đại thường sử dụng định tuyến L3 thay vì L2?",
         options: ["Để hỗ trợ giao thức STP tốt hơn.", "Để loại bỏ các vấn đề về Broadcast storm và tối ưu hóa ECMP.", "Vì L3 rẻ hơn L2.", "Để máy ảo chạy nhanh hơn."],
         correct: 1,
         explanation: "L3 fabric giúp mạng ổn định hơn, tránh vòng lặp L2 và tận dụng tối đa băng thông."
@@ -910,4 +916,12 @@ const securityCloudQuestions = [
         correct: 1,
         explanation: "DPDK tăng hiệu suất mạng gấp nhiều lần so với kernel bridge truyền thống."
     }
+];
+
+// Compatibility alias for existing code
+const securityCloudQuestions = [
+    ...securityCh1Questions,
+    ...securityCh2Questions,
+    ...securityCh3Questions,
+    ...securityCh4Questions
 ];
