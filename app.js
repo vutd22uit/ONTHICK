@@ -89,7 +89,14 @@ function startQuiz(subject, mode, examId = null) {
     state.startTime = new Date();
 
     // Get questions for this subject
-    const allQuestions = subject === 'cloud' ? cloudQuestions : networkQuestions;
+    let allQuestions;
+    if (subject === 'cloud') {
+        allQuestions = cloudQuestions;
+    } else if (subject === 'network') {
+        allQuestions = networkQuestions;
+    } else if (subject === 'security') {
+        allQuestions = securityCloudQuestions;
+    }
 
     // Handle exam mode with specific exam
     if (mode === 'exam' && examId !== null && subject === 'cloud' && typeof cloudExams !== 'undefined') {
@@ -110,7 +117,14 @@ function startQuiz(subject, mode, examId = null) {
     }
 
     // Update UI
-    const subjectName = subject === 'cloud' ? 'Cloud Computing' : 'Mạng Viễn Thông';
+    let subjectName;
+    if (subject === 'cloud') {
+        subjectName = 'Cloud Computing';
+    } else if (subject === 'network') {
+        subjectName = 'Mạng Viễn Thông';
+    } else if (subject === 'security') {
+        subjectName = 'Security Cloud';
+    }
     let modeName = mode === 'practice' ? 'Chế độ ôn tập' : 'Chế độ thi thử';
     if (state.currentExam) {
         modeName = state.currentExam.name;
@@ -410,9 +424,18 @@ function updateTimerDisplay() {
 function saveQuizResult(score, timeSpent) {
     const history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
 
+    let subjectName;
+    if (state.currentSubject === 'cloud') {
+        subjectName = 'Cloud Computing';
+    } else if (state.currentSubject === 'network') {
+        subjectName = 'Mạng Viễn Thông';
+    } else if (state.currentSubject === 'security') {
+        subjectName = 'Security Cloud';
+    }
+
     history.unshift({
         subject: state.currentSubject,
-        subjectName: state.currentSubject === 'cloud' ? 'Cloud Computing' : 'Mạng Viễn Thông',
+        subjectName: subjectName,
         mode: state.currentMode,
         score: score,
         correct: state.correctAnswers,
@@ -452,13 +475,16 @@ function updateHomeStats() {
     // Per-subject completed
     const cloudHistory = history.filter(h => h.subject === 'cloud');
     const networkHistory = history.filter(h => h.subject === 'network');
+    const securityHistory = history.filter(h => h.subject === 'security');
 
     document.getElementById('cloud-completed').textContent = cloudHistory.length * SETTINGS.questionsPerQuiz;
     document.getElementById('network-completed').textContent = networkHistory.length * SETTINGS.questionsPerQuiz;
+    document.getElementById('security-completed').textContent = securityHistory.length * SETTINGS.questionsPerQuiz;
 
     // Update total questions
     document.getElementById('cloud-total').textContent = typeof cloudQuestions !== 'undefined' ? cloudQuestions.length : 50;
     document.getElementById('network-total').textContent = typeof networkQuestions !== 'undefined' ? networkQuestions.length : 50;
+    document.getElementById('security-total').textContent = typeof securityCloudQuestions !== 'undefined' ? securityCloudQuestions.length : 50;
 }
 
 function updateStatsView() {
@@ -466,7 +492,8 @@ function updateStatsView() {
 
     // Overall progress
     const totalQuestions = (typeof cloudQuestions !== 'undefined' ? cloudQuestions.length : 50) +
-        (typeof networkQuestions !== 'undefined' ? networkQuestions.length : 50);
+        (typeof networkQuestions !== 'undefined' ? networkQuestions.length : 50) +
+        (typeof securityCloudQuestions !== 'undefined' ? securityCloudQuestions.length : 50);
     const answeredQuestions = history.reduce((sum, h) => sum + h.total, 0);
     const progressPercent = Math.min(100, Math.round((answeredQuestions / totalQuestions) * 100));
 
@@ -501,6 +528,24 @@ function updateStatsView() {
             Math.round(networkHistory.reduce((sum, h) => sum + h.score, 0) / networkHistory.length) + '%';
         document.getElementById('network-stats-best').textContent =
             Math.max(...networkHistory.map(h => h.score)) + '%';
+    }
+
+    // Security stats
+    const securityHistory = history.filter(h => h.subject === 'security');
+    if (securityHistory.length > 0) {
+        const securityDoneEl = document.getElementById('security-stats-done');
+        const securityAccuracyEl = document.getElementById('security-stats-accuracy');
+        const securityBestEl = document.getElementById('security-stats-best');
+
+        if (securityDoneEl) {
+            securityDoneEl.textContent = securityHistory.reduce((sum, h) => sum + h.total, 0) + ' câu';
+        }
+        if (securityAccuracyEl) {
+            securityAccuracyEl.textContent = Math.round(securityHistory.reduce((sum, h) => sum + h.score, 0) / securityHistory.length) + '%';
+        }
+        if (securityBestEl) {
+            securityBestEl.textContent = Math.max(...securityHistory.map(h => h.score)) + '%';
+        }
     }
 
     // History list
