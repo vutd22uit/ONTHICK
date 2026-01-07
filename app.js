@@ -263,6 +263,8 @@ function showQuestion(index) {
     answersContainer.innerHTML = '';
 
     const labels = ['A', 'B', 'C', 'D'];
+    const userAnswer = state.userAnswers[index]; // Get stored answer
+
     question.options.forEach((option, i) => {
         const div = document.createElement('div');
         div.className = 'answer-option';
@@ -273,15 +275,49 @@ function showQuestion(index) {
             <span class="answer-icon"></span>
         `;
         div.addEventListener('click', () => selectAnswer(i));
+
+        // Restore state if answered
+        if (userAnswer !== null) {
+            if (state.currentMode === 'exam') {
+                // Exam Mode: Just highlight selected
+                if (i === userAnswer) {
+                    div.classList.add('selected');
+                }
+            } else {
+                // Practice Mode: Show full results
+                div.classList.add('disabled');
+                if (i === userAnswer) {
+                    div.classList.add('selected');
+                    div.classList.add(i === question.correct ? 'correct' : 'wrong');
+                    div.querySelector('.answer-icon').textContent = i === question.correct ? '✓' : '✗';
+                }
+                if (i === question.correct && userAnswer !== question.correct) {
+                    div.classList.add('correct');
+                    div.querySelector('.answer-icon').textContent = '✓';
+                }
+            }
+        }
+
         answersContainer.appendChild(div);
     });
 
-    // Hide explanation
+    // Hide explanation initially
     document.getElementById('answer-explanation').classList.add('hidden');
 
-    // Reset next button
+    // Show explanation if answered in Practice mode
+    if (userAnswer !== null && state.currentMode === 'practice' && question.explanation) {
+        document.getElementById('explanation-text').textContent = question.explanation;
+        document.getElementById('answer-explanation').classList.remove('hidden');
+    }
+
+    // Update Next button
     const nextBtn = document.getElementById('next-btn');
-    nextBtn.disabled = true;
+    if (state.currentMode === 'practice') {
+        nextBtn.disabled = userAnswer === null; // Disable in practice until answered
+    } else {
+        nextBtn.disabled = false; // Always enabled in exam to skip
+    }
+
     nextBtn.innerHTML = index < state.questions.length - 1
         ? '<span>Tiếp theo</span> <span>→</span>'
         : '<span>Hoàn thành</span> <span>✓</span>';
@@ -291,8 +327,8 @@ function selectAnswer(answerIndex) {
     const question = state.questions[state.currentQuestionIndex];
     const options = document.querySelectorAll('.answer-option');
 
-    // Check if already answered (practice mode shows immediately)
-    if (state.userAnswers[state.currentQuestionIndex] !== undefined) {
+    // PRACTICE MODE: Prevent changing answer if already answered
+    if (state.currentMode === 'practice' && state.userAnswers[state.currentQuestionIndex] !== null) {
         return;
     }
 
@@ -301,13 +337,27 @@ function selectAnswer(answerIndex) {
 
     updateNavigationGrid(); // Mark as answered in grid
 
-    // Check if correct
+    // EXAM MODE: Just highlight selection, allow changing
+    if (state.currentMode === 'exam') {
+        options.forEach((option, i) => {
+            option.classList.remove('selected', 'correct', 'wrong', 'disabled'); // Reset
+            // option.classList.add('disabled'); // Don't disable in exam mode to allow changing
+
+            if (i === answerIndex) {
+                option.classList.add('selected');
+                // Don't show icon yet
+            }
+        });
+        return; // Exit, don't show results yet
+    }
+
+    // PRACTICE MODE: Show results immediately
     const isCorrect = answerIndex === question.correct;
     if (isCorrect) {
         state.correctAnswers++;
     }
 
-    // Update UI
+    // Update UI for Practice
     options.forEach((option, i) => {
         option.classList.add('disabled');
 
@@ -329,7 +379,7 @@ function selectAnswer(answerIndex) {
     });
 
     // Show explanation in practice mode
-    if (state.currentMode === 'practice' && question.explanation) {
+    if (question.explanation) {
         document.getElementById('explanation-text').textContent = question.explanation;
         document.getElementById('answer-explanation').classList.remove('hidden');
     }
