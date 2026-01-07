@@ -1279,4 +1279,115 @@ body::before {
     .modal-content {
         max-height: 90vh;
     }
+}/* Azota-style Quiz Layout */
+.quiz-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.question-section {
+    flex: 1;
+}
+
+.navigation-sidebar {
+    width: 300px;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 20px;
+}
+
+.navigation-sidebar h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.nav-item {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.nav-item:hover {
+    background: #e4e6eb;
+}
+
+/* States */
+.nav-item.current {
+    border-color: var(--primary-color);
+    background: white;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.nav-item.answered {
+    background: #e7f5ff;
+    color: var(--primary-color);
+    border-color: #e7f5ff;
+}
+
+.nav-item.flagged {
+    background: #fff9db;
+    /* Yellow tint */
+    color: #f59f00;
+    border-color: #f59f00;
+}
+
+.nav-item.answered.flagged {
+    background: #fff3bf;
+    /* Darker yellow if answered too */
+    color: #f59f00;
+    border-color: var(--primary-color);
+    /* Mix border to show answered?? Maybe just keep yellow dominant */
+}
+
+.btn-submit-exam {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .quiz-layout {
+        flex-direction: column;
+    }
+
+    .navigation-sidebar {
+        width: 100%;
+        order: -1;
+        /* Show nav on top or make it collapsible? For now on top is safer */
+        position: static;
+        margin-bottom: 20px;
+    }
+
+    .nav-grid {
+        max-height: 150px;
+        /* Limit height on mobile */
+    }
 }

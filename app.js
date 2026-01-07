@@ -12,7 +12,8 @@ const state = {
     currentExam: null, // For exam mode: contains exam config
     questions: [],
     currentQuestionIndex: 0,
-    userAnswers: [],
+    userAnswers: [], // Array of indices
+    flaggedQuestions: new Set(), // Set of flagged question indices
     correctAnswers: 0,
     timer: null,
     timeRemaining: 0,
@@ -118,7 +119,9 @@ function startQuiz(subject, mode, examId = null) {
     state.currentMode = mode;
     state.currentExam = null;
     state.currentQuestionIndex = 0;
-    state.userAnswers = [];
+    // Initialize empty answers and flags
+    state.userAnswers = new Array(state.questions.length).fill(null);
+    state.flaggedQuestions = new Set();
     state.correctAnswers = 0;
     state.quizCompleted = false;
     state.startTime = new Date();
@@ -180,9 +183,9 @@ function startQuiz(subject, mode, examId = null) {
         timerElement.classList.add('hidden');
     }
 
-    // Show first question
-    showQuestion(0);
     showView('quiz');
+    renderNavigationGrid(); // Render grid
+    showQuestion(0);
 }
 
 // Show exam selection modal for Cloud Computing
@@ -225,9 +228,32 @@ function showQuestion(index) {
     document.getElementById('q-number').textContent = index + 1;
     document.getElementById('current-q').textContent = index + 1;
 
+    // Update buttons
+    document.getElementById('prev-btn').disabled = index === 0;
+    document.getElementById('next-btn').textContent = index === state.questions.length - 1 ? 'Hoàn thành' : 'Tiếp theo';
+
+    // Update flag button
+    const flagBtn = document.getElementById('flag-btn');
+    if (flagBtn) {
+        if (state.flaggedQuestions.has(index)) {
+            flagBtn.classList.add('active'); // You might need CSS for .btn.active
+            flagBtn.innerHTML = '<span>🚩</span> Bỏ đánh dấu';
+            flagBtn.style.backgroundColor = '#fff9db';
+            flagBtn.style.color = '#f59f00';
+            flagBtn.style.borderColor = '#f59f00';
+        } else {
+            flagBtn.classList.remove('active');
+            flagBtn.innerHTML = '<span>🏳️</span> Đánh dấu';
+            flagBtn.style.backgroundColor = '';
+            flagBtn.style.color = '';
+            flagBtn.style.borderColor = '';
+        }
+    }
+
     // Update progress bar
     const progress = ((index) / state.questions.length) * 100;
     document.getElementById('quiz-progress-bar').style.width = `${progress}%`;
+    updateNavigationGrid(); // Update grid highlights
 
     // Update question text
     document.getElementById('question-text').textContent = question.question;
@@ -272,6 +298,8 @@ function selectAnswer(answerIndex) {
 
     // Store answer
     state.userAnswers[state.currentQuestionIndex] = answerIndex;
+
+    updateNavigationGrid(); // Mark as answered in grid
 
     // Check if correct
     const isCorrect = answerIndex === question.correct;
