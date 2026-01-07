@@ -607,5 +607,307 @@ const securityCloudQuestions = [
         options: ["os_server", "yum", "copy", "service"],
         correct: 0,
         explanation: "os_server (nay thuộc openstack.cloud.server) là module chính để provisioning VM."
+    },
+
+    // --- CHƯƠNG 4: CƠ SỞ VỀ MẠNG ẢO (VIRTUAL NETWORKS) (101-150) ---
+    {
+        question: "Mạng Underlay trong trung tâm dữ liệu đám mây thường là mạng:",
+        options: ["Mạng logic được tạo ra bởi phần mềm.", "Hạ tầng mạng vật lý bao gồm switch, router và cáp quang.", "Mạng chạy bên trong hệ điều hành máy ảo.", "Mạng dùng để lưu trữ dữ liệu database."],
+        correct: 1,
+        explanation: "Mạng Underlay là hạ tầng vật lý cung cấp kết nối IP cơ bản."
+    },
+    {
+        question: "Đặc điểm chính của mạng Overlay là gì?",
+        options: ["Sử dụng các switch vật lý để phân tách traffic.", "Tạo ra các mạng logic độc lập chạy phía trên hạ tầng Underlay.", "Không yêu cầu kết nối IP giữa các node vật lý.", "Chỉ hỗ trợ tối đa 4096 mạng ảo."],
+        correct: 1,
+        explanation: "Overlay tạo ra các mạng logic (VXLAN, Geneve) tách biệt hoàn toàn với Underlay."
+    },
+    {
+        question: "Kỹ thuật nào được sử dụng để chuyển tải gói tin Overlay qua mạng Underlay?",
+        options: ["Nén dữ liệu (Compression).", "Đóng gói (Encapsulation).", "Phân mảnh (Fragmentation).", "Định tuyến tĩnh (Static Routing)."],
+        correct: 1,
+        explanation: "Đóng gói (Encapsulation) bao bọc gói tin gốc bên trong một header IP/UDP khác."
+    },
+    {
+        question: "Trong mô hình Leaf-Spine của Underlay, thiết bị nào kết nối trực tiếp với các máy chủ vật lý?",
+        options: ["Spine switch.", "Leaf switch.", "Core router.", "Firewall biên."],
+        correct: 1,
+        explanation: "Leaf switch kết nối trực tiếp với máy chủ, Spine switch kết nối các Leaf switch với nhau."
+    },
+    {
+        question: "Mục tiêu của việc tách biệt Underlay và Overlay là gì?",
+        options: ["Để tăng tốc độ phần cứng.", "Tách biệt địa chỉ mạng của khách hàng khỏi cấu trúc mạng vật lý.", "Giảm số lượng card mạng cần thiết.", "Thay thế hoàn toàn giao thức TCP/IP."],
+        correct: 1,
+        explanation: "Giúp địa chỉ IP của khách hàng không bị giới hạn bởi sơ đồ IP của hạ tầng vật lý."
+    },
+    {
+        question: "VNI (Virtual Network Identifier) trong VXLAN có độ dài bao nhiêu bit?",
+        options: ["12 bit.", "24 bit.", "32 bit.", "48 bit."],
+        correct: 1,
+        explanation: "VNI dài 24 bit, cho phép tạo ra hơn 16 triệu mạng ảo."
+    },
+    {
+        question: "VXLAN cho phép tạo ra tối đa khoảng bao nhiêu mạng ảo?",
+        options: ["4,096.", "65,536.", "16 triệu.", "4 tỷ."],
+        correct: 2,
+        explanation: "Với 24 bit, VXLAN hỗ trợ 2^24 (~16,7 triệu) mạng ảo."
+    },
+    {
+        question: "Giao thức đóng gói nào sau đây là chuẩn IETF (RFC 8926) hỗ trợ mở rộng metadata linh hoạt?",
+        options: ["VXLAN.", "NVGRE.", "Geneve.", "GRE."],
+        correct: 2,
+        explanation: "Geneve là chuẩn mới linh hoạt hơn VXLAN, cho phép mang thêm metadata."
+    },
+    {
+        question: "Cổng UDP mặc định dành cho lưu lượng VXLAN là:",
+        options: ["4789.", "6081.", "8080.", "443."],
+        correct: 0,
+        explanation: "VXLAN sử dụng cổng UDP 4789."
+    },
+    {
+        question: "Giao thức Geneve sử dụng cổng UDP mặc định nào?",
+        options: ["4789.", "6081.", "22.", "53."],
+        correct: 1,
+        explanation: "Geneve sử dụng cổng UDP 6081."
+    },
+    {
+        question: "Lưu lượng di chuyển giữa các máy ảo trong cùng một trung tâm dữ liệu được gọi là:",
+        options: ["North-South traffic.", "East-West traffic.", "External traffic.", "Management traffic."],
+        correct: 1,
+        explanation: "East-West là lưu lượng nội bộ giữa các server/VM trong trung tâm dữ liệu."
+    },
+    {
+        question: "Lưu lượng đi từ đám mây ra ngoài Internet được gọi là:",
+        options: ["East-West.", "North-South.", "Loopback.", "Local-only."],
+        correct: 1,
+        explanation: "North-South là lưu lượng giữa đám mây và mạng bên ngoài/Internet."
+    },
+    {
+        question: "Một gói tin Overlay khi đi qua Underlay sẽ có cấu trúc như thế nào?",
+        options: ["Bị cắt bỏ header cũ.", " Được bao bọc bởi một Outer IP header và một UDP header.", "Chỉ thay đổi địa chỉ MAC nguồn.", "Được mã hóa và gửi qua FTP."],
+        correct: 1,
+        explanation: "Đóng gói thêm header mới để định tuyến qua hạ tầng Underlay."
+    },
+    {
+        question: "Tại sao mạng Underlay hiện đại thường sử dụng định tuyến L3 thay vì L2?",
+        options: ["Để hỗ trợ giao thức STP tốt hơn.", "Để loại bỏ các vấn đề về Broadcast storm và tối ưu hóa ECMP.", "Vì L3 rẻ hơn L2.", "Để máy ảo chạy nhanh hơn."],
+        correct: 1,
+        explanation: "L3 fabric giúp mạng ổn định hơn, tránh vòng lặp L2 và tận dụng tối đa băng thông."
+    },
+    {
+        question: "Khái niệm 'Jumbo Frames' trong mạng Underlay có ý nghĩa gì đối với mạng ảo?",
+        options: ["Để máy chủ trông to hơn.", "Cung cấp khoảng trống (headroom) cho header đóng gói mà không phải phân mảnh.", "Để tăng tốc độ CPU.", "Chỉ dùng cho việc sao lưu dữ liệu."],
+        correct: 1,
+        explanation: "Giúp tránh phân mảnh khi thêm header VXLAN (50 bytes) vào gói tin Ethernet chuẩn (1500 bytes)."
+    },
+    {
+        question: "vNIC (Virtual Network Interface Card) là:",
+        options: ["Card mạng vật lý trên server.", "Card mạng ảo của máy ảo kết nối vào switch ảo.", "Một loại phần mềm antivirus.", "Một cổng trên router vật lý."],
+        correct: 1,
+        explanation: "Máy ảo giao tiếp với mạng thông qua vNIC."
+    },
+    {
+        question: "Cơ chế virtio giúp tối ưu hóa hiệu năng mạng máy ảo bằng cách nào?",
+        options: ["Tự động mã hóa gói tin.", "Sử dụng driver ảo hóa bán phần (paravirtualization) để giảm overhead.", "Thay thế hoàn toàn card mạng vật lý.", "Tăng kích thước RAM của máy ảo."],
+        correct: 1,
+        explanation: "Virtio giảm thiểu việc giả lập phần cứng phức tạp, tăng tốc độ I/O."
+    },
+    {
+        question: "Lợi ích lớn nhất của SR-IOV là gì?",
+        options: ["Hỗ trợ Live Migration tốt nhất.", "Gán trực tiếp tài nguyên phần cứng (VF) cho VM để đạt hiệu năng gần như máy thật.", "Dễ dàng cấu hình bằng phần mềm.", "Tiết kiệm băng thông Internet."],
+        correct: 1,
+        explanation: "SR-IOV cho phép VM truy cập trực tiếp phần cứng card mạng mà không qua Hypervisor."
+    },
+    {
+        question: "Điểm hạn chế của SR-IOV trong môi trường đám mây là:",
+        options: ["Tốc độ quá chậm.", "Phụ thuộc chặt chẽ vào phần cứng, gây khó khăn cho việc Live Migration.", "Chỉ chạy được trên Windows.", "Không hỗ trợ địa chỉ IPv6."],
+        correct: 1,
+        explanation: "Do gắn cứng với phần cứng, việc di chuyển VM sang host khác rất phức tạp."
+    },
+    {
+        question: "Trong OpenStack Neutron, 'Port' đại diện cho điều gì?",
+        options: ["Một cổng vật lý trên switch ToR.", "Điểm neo cho vNIC của VM, nơi gán địa chỉ IP, MAC và Security Group.", "Một phần mềm định tuyến.", "Một dải địa chỉ IP."],
+        correct: 1,
+        explanation: "Port là thực thể logic chứa cấu hình mạng của một thiết bị ảo."
+    },
+    {
+        question: "Security Group (SG) hoạt động ở lớp nào của mô hình OSI?",
+        options: ["Lớp 1.", "Lớp 2.", "Lớp 3 và Lớp 4 (IP và Port/Protocol).", "Lớp 7."],
+        correct: 2,
+        explanation: "SG lọc lưu lượng dựa trên địa chỉ IP, giao thức (TCP/UDP/ICMP) và cổng."
+    },
+    {
+        question: "Security Group là 'Stateful', điều này có nghĩa là:",
+        options: ["Bạn phải mở luật cho cả hai chiều Inbound và Outbound.", "Nếu luật chiều đi được cho phép, chiều về tương ứng tự động được chấp nhận.", "Nó chỉ hoạt động tại một tiểu bang nhất định.", "Nó không bao giờ thay đổi trạng thái."],
+        correct: 1,
+        explanation: "SG tự động quản lý trạng thái kết nối, không cần mở luật chiều về thủ công."
+    },
+    {
+        question: "Network ACL (NACL) trong AWS khác SG ở điểm nào?",
+        options: ["NACL áp dụng cho instance, SG áp dụng cho subnet.", "NACL là stateless, SG là stateful.", "NACL chỉ chặn được IP, SG chỉ chặn được Port.", "Không có sự khác biệt."],
+        correct: 1,
+        explanation: "NACL yêu cầu cấu hình luật cho cả hai chiều một cách minh bạch."
+    },
+    {
+        question: " 'Anti-spoofing' trong mạng ảo giúp ngăn chặn hành vi:",
+        options: ["Máy ảo gửi thư rác.", "Máy ảo giả mạo địa chỉ IP hoặc MAC của một máy khác để đánh cắp dữ liệu.", "Máy ảo truy cập web trái phép.", "Máy ảo tự động tăng cấu hình CPU."],
+        correct: 1,
+        explanation: "Ngăn chặn tấn công Man-in-the-middle hoặc ARP spoofing trong mạng ảo."
+    },
+    {
+        question: "Để máy ảo trong mạng riêng (Private Subnet) truy cập được Internet, thiết bị nào thường được sử dụng?",
+        options: ["Internet Gateway (IGW).", "NAT Gateway (thực hiện SNAT).", "Bridge vật lý.", "Modem ADSL."],
+        correct: 1,
+        explanation: "NAT Gateway cho phép traffic đi ra nhưng ngăn chặn các kết nối lạ khởi tạo từ bên ngoài."
+    },
+    {
+        question: "Floating IP (trong OpenStack) hoạt động dựa trên cơ chế:",
+        options: ["Static Routing.", "DNAT (Destination NAT).", "VPN Tunneling.", "Proxy server."],
+        correct: 1,
+        explanation: "DNAT ánh xạ IP công khai vào IP nội bộ của máy ảo."
+    },
+    {
+        question: "Mục đích của Floating IP là gì?",
+        options: ["Tăng tốc độ download cho máy ảo.", "Cung cấp địa chỉ IP công khai có thể gán linh hoạt vào bất kỳ máy ảo nào.", "Bảo mật dữ liệu trong máy ảo.", "Giảm thiểu số lượng IP nội bộ."],
+        correct: 1,
+        explanation: "Giúp người dùng truy cập máy ảo từ bên ngoài mà không làm lộ IP nội bộ."
+    },
+    {
+        question: "Trong AWS, địa chỉ IP tĩnh công khai được gọi là:",
+        options: ["Public Static IP.", "Elastic IP (EIP).", "Floating IP.", "Dynamic IP."],
+        correct: 1,
+        explanation: "EIP là địa chỉ IP công khai cố định dành cho tài khoản AWS."
+    },
+    {
+        question: "Khi hai máy ảo nằm ở hai Subnet khác nhau muốn giao tiếp, chúng phải đi qua:",
+        options: ["Lớp 2 switch.", "Router ảo (L3 gateway).", "Card màn hình.", "Mạng nội bộ của CPU."],
+        correct: 1,
+        explanation: "Router ảo thực hiện định tuyến giữa các dải mạng khác nhau."
+    },
+    {
+        question: "DHCP trong đám mây chịu trách nhiệm:",
+        options: ["Mã hóa dữ liệu mạng.", "Cấp phát địa chỉ IP, gateway và DNS cho máy ảo một cách tự động.", "Chặn các cuộc tấn công DDoS.", "Quản lý bản quyền phần mềm."],
+        correct: 1,
+        explanation: "Tự động hóa việc cấu hình mạng cho hàng ngàn máy ảo."
+    },
+    {
+        question: "Cơ chế SLAAC trong IPv6 cho phép máy ảo:",
+        options: ["Tự động tạo địa chỉ IP dựa trên Router Advertisement (RA).", "Bắt buộc phải có server DHCPv6.", "Không cần kết nối mạng.", "Tự động cài đặt hệ điều hành."],
+        correct: 0,
+        explanation: "SLAAC (Stateless Address Autoconfiguration) giúp IPv6 triển khai dễ dàng hơn."
+    },
+    {
+        question: "Tại sao phải cho phép lưu lượng ICMPv6 trong Security Group của mạng IPv6?",
+        options: ["Để chơi game online.", "Vì Neighbor Discovery và các chức năng cốt lõi của IPv6 dựa trên ICMPv6.", "Để tăng tốc độ mạng.", "Không bắt buộc."],
+        correct: 1,
+        explanation: "Nếu chặn ICMPv6 hoàn toàn, mạng IPv6 sẽ không thể hoạt động ổn định."
+    },
+    {
+        question: "Transit Subnet được sử dụng để:",
+        options: ["Chứa dữ liệu backup.", "Kết nối giữa các Router/Firewall biên với nhau.", "Cho người dùng truy cập trực tiếp.", "Giảm độ trễ ổ đĩa."],
+        correct: 1,
+        explanation: "Là mạng trung gian dùng để kết nối các thiết bị mạng lớp trên."
+    },
+    {
+        question: "Trong kiến trúc NSX-T, Geneve sử dụng cổng nào?",
+        options: ["4789.", "6081.", "80.", "443."],
+        correct: 1,
+        explanation: "NSX-T chuẩn hóa sử dụng Geneve qua cổng 6081."
+    },
+    {
+        question: " 'Micro-segmentation' giúp ích gì cho bảo mật đám mây?",
+        options: ["Chia nhỏ ổ cứng.", "Kiểm soát lưu lượng East-West đến từng máy ảo lẻ, ngăn chặn tấn công lan tỏa.", "Giảm số lượng switch.", "Làm cho mạng chạy nhanh hơn."],
+        correct: 1,
+        explanation: "Áp dụng chính sách bảo mật tại từng card mạng đơn lẻ thay vì chỉ tại biên mạng."
+    },
+    {
+        question: "Lệnh Ansible os_network dùng để:",
+        options: ["Tạo máy ảo mới.", "Quản lý tài nguyên mạng (Virtual Network) trong OpenStack.", "Cấu hình card đồ họa.", "Gửi email thông báo."],
+        correct: 1,
+        explanation: "Module os_network quản lý các network Overlay trong OpenStack."
+    },
+    {
+        question: "Để gán Floating IP cho máy ảo qua Ansible, ta dùng module:",
+        options: ["os_server.", "os_floating_ip.", "os_network.", "os_image."],
+        correct: 1,
+        explanation: "os_floating_ip xử lý việc cấp phát và gắn IP vào máy ảo."
+    },
+    {
+        question: "Trong AWS CLI, lệnh nào dùng để tạo một VPC mới?",
+        options: ["aws ec2 create-vpc.", "aws vpc create.", "aws network create-vpc.", "aws s3 mb."],
+        correct: 1,
+        explanation: "Theo tài liệu AWS CLI, vpc nằm dưới namespace ec2: aws ec2 create-vpc."
+    },
+    {
+        question: " 'Metadata service' trên đám mây cung cấp thông tin gì cho máy ảo?",
+        options: ["Thông tin cấu hình: hostname, SSH keys, user-data.", "Toàn bộ source code của hệ thống.", "Mật khẩu của tài khoản ngân hàng.", "Dung lượng RAM vật lý còn lại."],
+        correct: 0,
+        explanation: "Metadata service cho phép VM tự biết cấu hình của mình khi khởi động."
+    },
+    {
+        question: "Địa chỉ IP link-local tiêu chuẩn của dịch vụ Metadata là:",
+        options: ["127.0.0.1.", "192.168.1.1.", "169.254.169.254.", "8.8.8.8."],
+        correct: 2,
+        explanation: "Đây là địa chỉ 'thần thánh' luôn khả dụng bên trong đám mây."
+    },
+    {
+        question: "Khi máy ảo không thể truy cập Internet, bước kiểm tra đầu tiên nên là:",
+        options: ["Gọi điện cho nhà cung cấp.", "Kiểm tra xem VM có nhận được IP và gateway chưa.", "Cài đặt lại hệ điều hành.", "Thay switch vật lý."],
+        correct: 1,
+        explanation: "Xác minh cấu hình mạng cơ bản là ưu tiên hàng đầu."
+    },
+    {
+        question: "Lỗi 'MTU mismatch' thường dẫn đến hiện tượng:",
+        options: ["Máy ảo không lên nguồn.", "Các gói tin nhỏ (như ping) chạy được nhưng gói tin lớn (như HTTP) bị treo/drop.", "Sai mật khẩu SSH.", "Màn hình xanh chết chóc."],
+        correct: 1,
+        explanation: "Gói tin quá lớn bị drop do không thể đi qua hầm (tunnel) VXLAN/Geneve."
+    },
+    {
+        question: "Để kiểm tra MTU tối đa trên đường truyền mà không bị phân mảnh, dùng lệnh:",
+        options: ["ping -s 1500.", "ping -M do -s 1472 <IP>.", "traceroute.", "ifconfig."],
+        correct: 1,
+        explanation: "Lệnh ping với cờ DF (Don't Fragment) giúp tìm ra MTU tối ưu."
+    },
+    {
+        question: "Công cụ nào trong Linux dùng để xem bảng định tuyến của máy ảo?",
+        options: ["ls -l.", "ip route hoặc route -n.", "ps aux.", "top."],
+        correct: 1,
+        explanation: "Lệnh 'ip route' là tiêu chuẩn hiện đại trên Linux."
+    },
+    {
+        question: "Trong OpenStack, 'Neutron-server' đóng vai trò:",
+        options: ["Xử lý gói tin thực tế.", "Nhận các yêu cầu API và điều phối cấu hình mạng ảo.", "Lưu trữ file ảnh máy ảo.", "Cấp nguồn cho máy chủ."],
+        correct: 1,
+        explanation: "Neutron-server là bộ não điều hành lớp mạng ảo."
+    },
+    {
+        question: " 'VXLAN Tunnel End Point' (VTEP) là gì?",
+        options: ["Một điểm kết thúc của đường hầm VXLAN, nơi thực hiện đóng/giải mã gói tin.", "Một loại cáp mạng mới.", "Một lệnh trong Linux.", "Tên một hacker."],
+        correct: 0,
+        explanation: "VTEP có thể là một switch vật lý hoặc một switch ảo trên host."
+    },
+    {
+        question: " 'Config-Drive' là giải pháp thay thế cho Metadata service nhằm:",
+        options: ["Tăng dung lượng lưu trữ.", "Tăng tính bảo mật bằng cách gắn cấu hình vào một ổ đĩa ảo thay vì qua mạng.", "Làm cho VM boot nhanh hơn.", "Giảm giá thành dịch vụ."],
+        correct: 1,
+        explanation: "Giúp VM cấu hình được ngay cả khi chưa có mạng IP."
+    },
+    {
+        question: "Tại sao người ta ưu tiên sử dụng Geneve trong các hệ thống SDN hiện đại (như OVN)?",
+        options: ["Vì nó là mã nguồn mở.", "Vì khả năng mang thêm các tùy chọn metadata linh hoạt cho telemetry và bảo mật.", "Vì nó không tốn băng thông.", "Vì nó dễ phát âm hơn VXLAN."],
+        correct: 1,
+        explanation: "Geneve vượt trội nhờ khả năng mở rộng (Extensibility)."
+    },
+    {
+        question: "Một 'Security Group rule' mặc định trong nhiều nền tảng đám mây khi mới tạo thường:",
+        options: ["Cho phép mọi lưu lượng.", "Chặn mọi lưu lượng Inbound (Deny-all by default).", "Chỉ cho phép cổng 80.", "Chỉ cho phép admin truy cập."],
+        correct: 1,
+        explanation: "Nguyên tắc 'Default Deny' để đảm bảo an toàn tối đa."
+    },
+    {
+        question: " 'OVS-DPDK' giúp ích gì cho mạng ảo hóa?",
+        options: ["Tăng dung lượng RAM.", "Tăng tốc độ xử lý gói tin bằng cách đưa việc chuyển mạch ra khỏi nhân Linux vào không gian người dùng (User-space).", "Làm cho server mát hơn.", "Tự động sửa lỗi phần cứng."],
+        correct: 1,
+        explanation: "DPDK tăng hiệu suất mạng gấp nhiều lần so với kernel bridge truyền thống."
     }
 ];
