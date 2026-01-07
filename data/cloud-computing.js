@@ -313,7 +313,7 @@ const cloudQuestions = [
             "Chỉ có một user"
         ],
         correct: 1,
-        explanation: "Multi-tenancy là kiến trúc nhiều tenant (khách hàng) chia sẻ tài nguyên vật lý nhưng data và ứng dụng được cách ly logic."
+        explanation: "Multi-tenancy là kiến trúc nhiều tenant// (Check check) chia sẻ tài nguyên vật lý nhưng data và ứng dụng được cách ly logic."
     },
 
     // Cloud Characteristics
@@ -569,5 +569,118 @@ const cloudQuestions = [
         ],
         correct: 0,
         explanation: "VXLAN và Geneve là các giao thức đóng gói (encapsulation) phổ biến để xây dựng mạng ảo (overlay) lớp 2 trên nền mạng vật lý lớp 3."
+    }
+    ,
+
+    // Final Exam - Cloud Computing (Imported)
+    {
+        question: "What is cloud computing?",
+        options: [
+            "Delivery of computing services over the internet.",
+            "Delivery of storage services over the internet.",
+            "Delivery of websites accessible via the internet.",
+            "All of the above."
+        ],
+        correct: 0,
+        explanation: "Cloud computing is the delivery of computing services—including servers, storage, databases, networking, software, analytics, and intelligence—over the Internet."
+    },
+    {
+        question: "Which cloud model uses some datacenters focused on providing cloud services to anyone that wants them, and some data centers that are focused on a single customer?",
+        options: [
+            "Public cloud",
+            "Hybrid cloud",
+            "Multicloud",
+            "Private cloud"
+        ],
+        correct: 1,
+        explanation: "Hybrid cloud combines public and private clouds, bound together by technology that allows data and applications to be shared between them."
+    },
+    {
+        question: "According to the shared responsibility model, which cloud service type places the most responsibility on the customer?",
+        options: [
+            "Infrastructure as a Service (IaaS)",
+            "Software as a Service (SaaS)",
+            "Platform as a Service (PaaS)",
+            "Database as a Service (DBaaS)"
+        ],
+        correct: 0,
+        explanation: "In IaaS, the customer manages everything from the OS up (applications, data, runtime, middleware, OS), whereas the provider only manages the physical infrastructure."
+    },
+    {
+        question: "Which type of scaling involves adding or removing resources (such as virtual machines or containers) to meet demand?",
+        options: [
+            "Vertical scaling",
+            "Horizontal scaling",
+            "Direct scaling",
+            "Diagonal scaling"
+        ],
+        correct: 1,
+        explanation: "Horizontal scaling (scaling out/in) involves adding or removing instances of resources, whereas Vertical scaling (scaling up/down) involves changing the power (CPU/RAM) of existing instances."
+    },
+    {
+        question: "Which cloud service type is most suited to a 'lift and shift' migration from an on-premises datacenter to a cloud deployment?",
+        options: [
+            "Infrastructure as a Service (IaaS)",
+            "Platform as a Service (PaaS)",
+            "Software as a Service (SaaS)",
+            "Function as a Service (FaaS)"
+        ],
+        correct: 0,
+        explanation: "IaaS allows you to migrate existing VMs and applications with minimal changes (lift and shift), reproducing the on-premises environment in the cloud."
+    },
+    {
+        question: "What happens to the resources within a resource group when an action or setting at the Resource Group level is applied?",
+        options: [
+            "Current resources inherit the setting, but future resources don't.",
+            "Future resources inherit the setting, but current ones don't.",
+            "The setting is applied to current and future resources.",
+            "Nothing happens to the resources."
+        ],
+        correct: 2,
+        explanation: "Settings like RBAC permissions and Locks applied at the Resource Group level are inherited by all resources within that group (both current and future)."
+    },
+    {
+        question: "Which Azure Virtual Machine feature staggers updates across VMs based on their update domain and fault domain?",
+        options: [
+            "Availability sets",
+            "Scale sets",
+            "Update sets",
+            "Recovery sets"
+        ],
+        correct: 0,
+        explanation: "Availability Sets distribute VMs across multiple Fault Domains (physical separation) and Update Domains (logical separation for updates) to ensure high availability."
+    },
+    {
+        question: "What is a Docker container?",
+        options: [
+            "A lightweight virtual machine.",
+            "An isolated environment for running applications.",
+            "A type of database.",
+            "A web application."
+        ],
+        correct: 1,
+        explanation: "A container is a standard unit of software that packages up code and all its dependencies so the application runs quickly and reliably from one computing environment to another. It isolates the application."
+    },
+    {
+        question: "Which instruction in a Dockerfile is used to specify the base image?",
+        options: [
+            "COPY",
+            "RUN",
+            "FROM",
+            "CMD"
+        ],
+        correct: 2,
+        explanation: "The FROM instruction initializes a new build stage and sets the Base Image for subsequent instructions."
+    },
+    {
+        question: "Which of the following choices best describes DevOps?",
+        options: [
+            "DevOps is the role of who manages source control and pipelines.",
+            "DevOps is the union of people, process, and products to enable continuous delivery of value to end users.",
+            "DevOps is only about creating continuous delivery pipelines.",
+            "DevOps is a software tool for monitoring."
+        ],
+        correct: 1,
+        explanation: "DevOps meets the definition of combining people, processes, and technology/products to continuously deliver value."
     }
 ];

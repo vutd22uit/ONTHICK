@@ -26,6 +26,41 @@ const SETTINGS = {
     examTimeMinutes: 30
 };
 
+// Subject Configuration
+const SUBJECT_CONFIG = {
+    'cloud': {
+        name: 'Cloud Computing',
+        getQuestions: () => typeof cloudQuestions !== 'undefined' ? cloudQuestions : [],
+        hasExams: true,
+        exams: () => typeof cloudExams !== 'undefined' ? cloudExams : []
+    },
+    'network': {
+        name: 'Mạng Viễn Thông',
+        getQuestions: () => typeof networkQuestions !== 'undefined' ? networkQuestions : [],
+        hasExams: false
+    },
+    'security-ch1': {
+        name: 'Security Ch 1',
+        getQuestions: () => typeof securityCh1Questions !== 'undefined' ? securityCh1Questions : [],
+        hasExams: false
+    },
+    'security-ch2': {
+        name: 'Security Ch 2',
+        getQuestions: () => typeof securityCh2Questions !== 'undefined' ? securityCh2Questions : [],
+        hasExams: false
+    },
+    'security-ch3': {
+        name: 'Security Ch 3',
+        getQuestions: () => typeof securityCh3Questions !== 'undefined' ? securityCh3Questions : [],
+        hasExams: false
+    },
+    'security-ch4': {
+        name: 'Security Ch 4',
+        getQuestions: () => typeof securityCh4Questions !== 'undefined' ? securityCh4Questions : [],
+        hasExams: false
+    }
+};
+
 // =========================================
 // INITIALIZATION
 // =========================================
@@ -89,26 +124,20 @@ function startQuiz(subject, mode, examId = null) {
     state.startTime = new Date();
 
     // Get questions for this subject
-    let allQuestions;
-    if (subject === 'cloud') {
-        allQuestions = cloudQuestions;
-    } else if (subject === 'network') {
-        allQuestions = networkQuestions;
-    } else if (subject === 'security') {
-        allQuestions = securityCloudQuestions;
-    } else if (subject === 'security-ch1') {
-        allQuestions = securityCh1Questions;
-    } else if (subject === 'security-ch2') {
-        allQuestions = securityCh2Questions;
-    } else if (subject === 'security-ch3') {
-        allQuestions = securityCh3Questions;
-    } else if (subject === 'security-ch4') {
-        allQuestions = securityCh4Questions;
+    const subjectConfig = SUBJECT_CONFIG[subject];
+    let allQuestions = [];
+
+    if (subjectConfig) {
+        allQuestions = subjectConfig.getQuestions();
+    } else {
+        console.error(`Unknown subject: ${subject}`);
+        return;
     }
 
     // Handle exam mode with specific exam
-    if (mode === 'exam' && examId !== null && subject === 'cloud' && typeof cloudExams !== 'undefined') {
-        const exam = cloudExams.find(e => e.id === examId);
+    if (mode === 'exam' && examId !== null && subjectConfig.hasExams) {
+        const exams = subjectConfig.exams();
+        const exam = exams.find(e => e.id === examId);
         if (exam) {
             state.currentExam = exam;
             // Get questions by indices (handle invalid indices gracefully)
@@ -125,17 +154,9 @@ function startQuiz(subject, mode, examId = null) {
     }
 
     // Update UI
-    let subjectName;
-    if (subject === 'cloud') {
-        subjectName = 'Cloud Computing';
-    } else if (subject === 'network') {
-        subjectName = 'Mạng Viễn Thông';
-    } else if (subject === 'security') {
-        subjectName = 'Security Cloud';
-    } else if (subject.startsWith('security-ch')) {
-        const ch = subject.split('ch')[1];
-        subjectName = `Security Ch ${ch}`;
-    }
+    let subjectName = subjectConfig ? subjectConfig.name : subject;
+    // Special handling for dynamic chapter names if needed, but config handles it mostly
+
     let modeName = mode === 'practice' ? 'Chế độ ôn tập' : 'Chế độ thi thử';
     if (state.currentExam) {
         modeName = state.currentExam.name;
@@ -435,17 +456,8 @@ function updateTimerDisplay() {
 function saveQuizResult(score, timeSpent) {
     const history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
 
-    let subjectName;
-    if (state.currentSubject === 'cloud') {
-        subjectName = 'Cloud Computing';
-    } else if (state.currentSubject === 'network') {
-        subjectName = 'Mạng Viễn Thông';
-    } else if (state.currentSubject === 'security') {
-        subjectName = 'Security Cloud';
-    } else if (state.currentSubject.startsWith('security-ch')) {
-        const ch = state.currentSubject.split('ch')[1];
-        subjectName = `Security Ch ${ch}`;
-    }
+    const subjectConfig = SUBJECT_CONFIG[state.currentSubject];
+    let subjectName = subjectConfig ? subjectConfig.name : state.currentSubject;
 
     history.unshift({
         subject: state.currentSubject,
@@ -486,54 +498,45 @@ function updateHomeStats() {
         document.getElementById('best-score').textContent = bestScore + '%';
     }
 
-    // Per-subject completed
-    const cloudHistory = history.filter(h => h.subject === 'cloud');
-    const networkHistory = history.filter(h => h.subject === 'network');
+    // Dynamic Stats Update based on SUBJECT_CONFIG
+    Object.keys(SUBJECT_CONFIG).forEach(subjectKey => {
+        const config = SUBJECT_CONFIG[subjectKey];
+        const subjectHistory = history.filter(h => h.subject === subjectKey);
 
-    if (document.getElementById('cloud-completed'))
-        document.getElementById('cloud-completed').textContent = cloudHistory.length * SETTINGS.questionsPerQuiz;
-    if (document.getElementById('network-completed'))
-        document.getElementById('network-completed').textContent = networkHistory.length * SETTINGS.questionsPerQuiz;
+        const completedEl = document.getElementById(`${subjectKey}-completed`);
+        const totalEl = document.getElementById(`${subjectKey}-total`);
 
-    // Security Chapters Stats
-    ['ch1', 'ch2', 'ch3', 'ch4'].forEach(ch => {
-        const subId = `security-${ch}`;
-        const chHistory = history.filter(h => h.subject === subId);
-        const completedEl = document.getElementById(`${subId}-completed`);
-        const totalEl = document.getElementById(`${subId}-total`);
-
-        if (completedEl) completedEl.textContent = chHistory.length * SETTINGS.questionsPerQuiz;
+        if (completedEl) {
+            // Estimate questions done based on history count * per quiz
+            // Or if we track total questions answered in history, we could use that. 
+            // Current logic assumes 1 entry = 1 quiz (20 questions).
+            // But let's check if the history object actually has 'total' property (yes it does in saveQuizResult)
+            // However, previous logic was: length * SETTINGS.questionsPerQuiz. 
+            // Let's stick to previous logic for consistency or improve it to sum 'total' from history?
+            // Previous: document.getElementById('cloud-completed').textContent = cloudHistory.length * SETTINGS.questionsPerQuiz;
+            completedEl.textContent = subjectHistory.length * SETTINGS.questionsPerQuiz;
+        }
 
         if (totalEl) {
-            let total = 0;
-            if (ch === 'ch1' && typeof securityCh1Questions !== 'undefined') total = securityCh1Questions.length;
-            else if (ch === 'ch2' && typeof securityCh2Questions !== 'undefined') total = securityCh2Questions.length;
-            else if (ch === 'ch3' && typeof securityCh3Questions !== 'undefined') total = securityCh3Questions.length;
-            else if (ch === 'ch4' && typeof securityCh4Questions !== 'undefined') total = securityCh4Questions.length;
-            totalEl.textContent = total;
+            const questions = config.getQuestions();
+            totalEl.textContent = questions.length;
         }
     });
-
-    // Update total questions for main IDs if they exist
-    if (document.getElementById('cloud-total'))
-        document.getElementById('cloud-total').textContent = typeof cloudQuestions !== 'undefined' ? cloudQuestions.length : 50;
-    if (document.getElementById('network-total'))
-        document.getElementById('network-total').textContent = typeof networkQuestions !== 'undefined' ? networkQuestions.length : 50;
 }
 
 function updateStatsView() {
     const history = JSON.parse(localStorage.getItem('quizHistory') || '[]');
 
     // Overall progress
-    const totalQuestions = (typeof cloudQuestions !== 'undefined' ? cloudQuestions.length : 50) +
-        (typeof networkQuestions !== 'undefined' ? networkQuestions.length : 50) +
-        (typeof securityCh1Questions !== 'undefined' ? securityCh1Questions.length : 0) +
-        (typeof securityCh2Questions !== 'undefined' ? securityCh2Questions.length : 0) +
-        (typeof securityCh3Questions !== 'undefined' ? securityCh3Questions.length : 0) +
-        (typeof securityCh4Questions !== 'undefined' ? securityCh4Questions.length : 0);
-    const answeredQuestions = history.reduce((sum, h) => sum + h.total, 0);
-    const progressPercent = totalQuestions > 0 ? Math.min(100, Math.round((answeredQuestions / totalQuestions) * 100)) : 0;
+    // Overall progress
+    let totalQuestions = 0;
+    let answeredQuestions = history.reduce((sum, h) => sum + h.total, 0);
 
+    Object.values(SUBJECT_CONFIG).forEach(config => {
+        totalQuestions += config.getQuestions().length;
+    });
+
+    const progressPercent = totalQuestions > 0 ? Math.min(100, Math.round((answeredQuestions / totalQuestions) * 100)) : 0;
     document.getElementById('progress-value').textContent = progressPercent + '%';
 
     // Update circular progress (stroke-dashoffset)
@@ -545,45 +548,28 @@ function updateStatsView() {
         circle.style.stroke = `url(#gradient)`;
     }
 
-    // Cloud stats
-    const cloudHistory = history.filter(h => h.subject === 'cloud');
-    if (cloudHistory.length > 0) {
-        document.getElementById('cloud-stats-done').textContent =
-            cloudHistory.reduce((sum, h) => sum + h.total, 0) + ' câu';
-        document.getElementById('cloud-stats-accuracy').textContent =
-            Math.round(cloudHistory.reduce((sum, h) => sum + h.score, 0) / cloudHistory.length) + '%';
-        document.getElementById('cloud-stats-best').textContent =
-            Math.max(...cloudHistory.map(h => h.score)) + '%';
-    }
+    // Dynamic Subject Stats
+    Object.keys(SUBJECT_CONFIG).forEach(subjectKey => {
+        const subjectHistory = history.filter(h => h.subject === subjectKey);
+        // HTML IDs: cloud-stats-done, cloud-stats-accuracy, etc.
+        const doneEl = document.getElementById(`${subjectKey}-stats-done`);
+        const accEl = document.getElementById(`${subjectKey}-stats-accuracy`);
+        const bestEl = document.getElementById(`${subjectKey}-stats-best`);
 
-    // Network stats
-    const networkHistory = history.filter(h => h.subject === 'network');
-    if (networkHistory.length > 0) {
-        document.getElementById('network-stats-done').textContent =
-            networkHistory.reduce((sum, h) => sum + h.total, 0) + ' câu';
-        document.getElementById('network-stats-accuracy').textContent =
-            Math.round(networkHistory.reduce((sum, h) => sum + h.score, 0) / networkHistory.length) + '%';
-        document.getElementById('network-stats-best').textContent =
-            Math.max(...networkHistory.map(h => h.score)) + '%';
-    }
+        if (subjectHistory.length > 0) {
+            if (doneEl) doneEl.textContent = subjectHistory.reduce((sum, h) => sum + h.total, 0) + ' câu';
 
-    // Security stats - Overall (legacy support)
-    const securityHistory = history.filter(h => h.subject === 'security' || h.subject.startsWith('security-ch'));
-    if (securityHistory.length > 0) {
-        const securityDoneEl = document.getElementById('security-stats-done');
-        const securityAccuracyEl = document.getElementById('security-stats-accuracy');
-        const securityBestEl = document.getElementById('security-stats-best');
+            if (accEl) {
+                const avg = Math.round(subjectHistory.reduce((sum, h) => sum + h.score, 0) / subjectHistory.length);
+                accEl.textContent = avg + '%';
+            }
 
-        if (securityDoneEl) {
-            securityDoneEl.textContent = securityHistory.reduce((sum, h) => sum + h.total, 0) + ' câu';
+            if (bestEl) {
+                const best = Math.max(...subjectHistory.map(h => h.score));
+                bestEl.textContent = best + '%';
+            }
         }
-        if (securityAccuracyEl) {
-            securityAccuracyEl.textContent = Math.round(securityHistory.reduce((sum, h) => sum + h.score, 0) / securityHistory.length) + '%';
-        }
-        if (securityBestEl) {
-            securityBestEl.textContent = Math.max(...securityHistory.map(h => h.score)) + '%';
-        }
-    }
+    });
 
     // History list
     const historyList = document.getElementById('history-list');

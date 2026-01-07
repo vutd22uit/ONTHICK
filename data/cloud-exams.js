@@ -71,5 +71,12 @@ const cloudExams = [
         description: "Đề thi tổng hợp kiến thức Cloud Computing",
         timeLimit: 45,
         questionIndices: [9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 3, 6, 11, 16, 21, 26, 31, 36, 41, 46, 3]
+    },
+    {
+        id: 11,
+        name: "Final Exam - Cloud Computing",
+        description: "Đề thi chính thức môn Cloud Computing (Imported)",
+        timeLimit: 15, // 10 câu 15 phút
+        questionIndices: [49, 50, 51, 52, 53, 54, 55, 56, 57, 58]
     }
 ];
