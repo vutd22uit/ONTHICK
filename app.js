@@ -14,6 +14,8 @@ const state = {
     currentQuestionIndex: 0,
     userAnswers: [], // Array of indices
     flaggedQuestions: new Set(), // Set of flagged question indices
+    violations: 0,
+    maxViolations: 3,
     correctAnswers: 0,
     timer: null,
     timeRemaining: 0,
@@ -90,6 +92,7 @@ function showView(viewName) {
     // Stop timer if leaving quiz
     if (state.currentView === 'quiz' && viewName !== 'quiz') {
         stopTimer();
+        stopAntiCheatMonitor(); // Stop anti-cheat when leaving quiz view
     }
 
     document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
@@ -122,6 +125,7 @@ function startQuiz(subject, mode, examId = null) {
     // Initialize empty answers and flags
     state.userAnswers = new Array(state.questions.length).fill(null);
     state.flaggedQuestions = new Set();
+    state.violations = 0;
     state.correctAnswers = 0;
     state.quizCompleted = false;
     state.startTime = new Date();
@@ -186,6 +190,11 @@ function startQuiz(subject, mode, examId = null) {
     showView('quiz');
     renderNavigationGrid(); // Render grid
     showQuestion(0);
+
+    // Enable Anti-Cheat for Exam Mode
+    if (mode === 'exam') {
+        startAntiCheatMonitor();
+    }
 }
 
 // Show exam selection modal for Cloud Computing
@@ -398,6 +407,7 @@ function nextQuestion() {
 
 function finishQuiz() {
     stopTimer();
+    stopAntiCheatMonitor(); // Stop anti-cheat when quiz finishes
     state.quizCompleted = true;
 
     // Calculate results
@@ -445,6 +455,7 @@ function finishQuiz() {
 function exitQuiz() {
     if (state.quizCompleted || confirm('Bạn có chắc muốn thoát? Tiến độ sẽ bị mất.')) {
         stopTimer();
+        stopAntiCheatMonitor(); // Stop anti-cheat when exiting quiz
         showView('home');
     }
 }

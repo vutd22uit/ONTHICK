@@ -1279,100 +1279,192 @@ body::before {
     .modal-content {
         max-height: 90vh;
     }
-}/* Azota-style Quiz Layout */
+}
+
+/* Azota-style Quiz Layout (Refined) */
 .quiz-layout {
     display: flex;
-    gap: 20px;
+    gap: 24px;
     align-items: flex-start;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .question-section {
     flex: 1;
 }
 
+/* Override Question Card for Flat Look */
+.question-card,
+.result-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+    border-radius: 12px !important;
+    padding: 32px !important;
+}
+
+.question-text {
+    color: #1f2937;
+    font-weight: 500;
+}
+
+/* Answer Options */
+.answer-option {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    margin-bottom: 12px;
+    /* Spacing between options */
+    transition: all 0.2s ease;
+}
+
+.answer-option:hover:not(.disabled) {
+    background: #f3f4f6 !important;
+    border-color: #9ca3af !important;
+}
+
+.answer-option.selected {
+    background: #eff6ff !important;
+    /* Light blue */
+    border-color: #3b82f6 !important;
+    /* Azota Blue */
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.answer-label {
+    background: #f3f4f6 !important;
+    color: #4b5563;
+}
+
+.answer-option.selected .answer-label {
+    background: #3b82f6 !important;
+    color: white;
+}
+
+/* Navigation Sidebar */
 .navigation-sidebar {
-    width: 300px;
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    width: 320px;
+    background: #ffffff !important;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     position: sticky;
-    top: 20px;
+    top: 24px;
 }
 
 .navigation-sidebar h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 1.1rem;
-    color: var(--text-color);
-    text-align: center;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 12px;
 }
 
+/* Grid Items */
 .nav-grid {
+    gap: 8px;
+    padding: 4px;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(6, 1fr);
+    /* 6 columns like Azota */
     max-height: 400px;
     overflow-y: auto;
-    padding-right: 5px;
 }
 
 .nav-item {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
-    background: #f0f2f5;
+    background: #f3f4f6;
+    /* Light gray for unanswered */
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: none;
+    border-radius: 6px;
+    /* Square with rounded corners */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--text-color);
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
+    transition: all 0.15s ease;
 }
 
 .nav-item:hover {
-    background: #e4e6eb;
+    border-color: #d1d5db;
+    background: #e5e7eb;
 }
 
-/* States */
+/* Current Question */
 .nav-item.current {
-    border-color: var(--primary-color);
-    background: white;
-    color: var(--primary-color);
+    border-color: #3b82f6;
+    border-width: 2px;
+    color: #3b82f6;
+    background: #ffffff;
     font-weight: 700;
 }
 
+/* Answered */
 .nav-item.answered {
-    background: #e7f5ff;
-    color: var(--primary-color);
-    border-color: #e7f5ff;
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
 }
 
+/* Flagged */
 .nav-item.flagged {
-    background: #fff9db;
-    /* Yellow tint */
-    color: #f59f00;
-    border-color: #f59f00;
+    background: #fef3c7 !important;
+    /* Lighter yellow */
+    border-color: #fbbf24 !important;
+    color: #92400e;
 }
 
+/* Flagged AND Answered */
 .nav-item.answered.flagged {
-    background: #fff3bf;
-    /* Darker yellow if answered too */
-    color: #f59f00;
-    border-color: var(--primary-color);
-    /* Mix border to show answered?? Maybe just keep yellow dominant */
+    background: #fbbf24 !important;
+    color: white !important;
+    border-color: #fbbf24 !important;
 }
 
+/* Submit Button */
 .btn-submit-exam {
+    background: #3b82f6;
+    /* Blue like Azota "Nộp bài" */
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    transition: all 0.15s;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 16px;
+}
+
+.btn-submit-exam:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+}
+
+.btn-submit-exam:active {
+    transform: translateY(0);
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+    .navigation-sidebar {
+        width: 280px;
+    }
+
+    .nav-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
     .quiz-layout {
         flex-direction: column;
@@ -1380,14 +1472,13 @@ body::before {
 
     .navigation-sidebar {
         width: 100%;
-        order: -1;
-        /* Show nav on top or make it collapsible? For now on top is safer */
         position: static;
-        margin-bottom: 20px;
+        margin-bottom: 24px;
+        order: -1;
     }
 
     .nav-grid {
-        max-height: 150px;
-        /* Limit height on mobile */
+        max-height: 200px;
+        grid-template-columns: repeat(6, 1fr);
     }
 }
