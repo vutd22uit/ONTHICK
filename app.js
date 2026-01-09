@@ -61,6 +61,12 @@ const SUBJECT_CONFIG = {
         name: 'Security Ch 4',
         getQuestions: () => typeof securityCh4Questions !== 'undefined' ? securityCh4Questions : [],
         hasExams: false
+    },
+    'security-cloud': {
+        name: 'Security Cloud (NT524)',
+        getQuestions: () => typeof securityCloudQuestions !== 'undefined' ? securityCloudQuestions : [],
+        hasExams: true,
+        exams: () => typeof securityCloudExams !== 'undefined' ? securityCloudExams : []
     }
 };
 
@@ -190,9 +196,15 @@ function startQuiz(subject, mode, examId = null) {
     showQuestion(0);
 }
 
-// Show exam selection modal for Cloud Computing
+// Show exam selection modal for Cloud Computing and Security Cloud
 function selectExam(subject) {
-    if (subject !== 'cloud' || typeof cloudExams === 'undefined') {
+    // Get exam list based on subject
+    let examsList;
+    if (subject === 'cloud' && typeof cloudExams !== 'undefined') {
+        examsList = cloudExams;
+    } else if (subject === 'security-cloud' && typeof securityCloudExams !== 'undefined') {
+        examsList = securityCloudExams;
+    } else {
         // Fallback to regular exam mode
         startQuiz(subject, 'exam');
         return;
@@ -202,8 +214,8 @@ function selectExam(subject) {
     const examList = document.getElementById('exam-list');
 
     // Generate exam buttons
-    examList.innerHTML = cloudExams.map(exam => `
-        <button class="exam-option" onclick="startQuiz('cloud', 'exam', ${exam.id})">
+    examList.innerHTML = examsList.map(exam => `
+        <button class="exam-option" onclick="startQuiz('${subject}', 'exam', ${exam.id})">
             <div class="exam-option-header">
                 <span class="exam-option-number">${exam.name}</span>
                 <span class="exam-option-time">⏱️ ${exam.timeLimit} phút</span>

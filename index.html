@@ -210,7 +210,37 @@
                             </button>
                         </div>
                     </div>
+                </div>
 
+                <!-- Security Cloud Full Exam -->
+                <div class="subject-card" id="card-security-cloud" style="grid-column: 1 / -1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="subject-card-inner">
+                        <div class="card-icon">🎓</div>
+                        <h2 class="card-title">Đề Thi Tổng Hợp Security Cloud</h2>
+                        <p class="card-desc">10 đề thi chính thức kết hợp tất cả 4 chương - Mỗi đề 30 câu, 60 phút</p>
+                        <div class="card-stats">
+                            <span class="stat">
+                                <span class="stat-icon">📝</span>
+                                <span id="security-cloud-total">150</span> câu hỏi
+                            </span>
+                            <span class="stat">
+                                <span class="stat-icon">✅</span>
+                                <span id="security-cloud-completed">0</span> đã làm
+                            </span>
+                            <span class="stat">
+                                <span class="stat-icon">📋</span>
+                                <span>10 đề thi</span>
+                            </span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-primary" onclick="startQuiz('security-cloud', 'practice')">
+                                <span>📖</span> Ôn tập ngẫu nhiên
+                            </button>
+                            <button class="btn btn-exam" onclick="selectExam('security-cloud')" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none;">
+                                <span>🎯</span> Thi thử chính thức
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Quick Stats -->
@@ -455,6 +485,7 @@
     <script src="data/mang-vien-thong.js"></script>
     <script src="data/cloud-exams.js"></script>
     <script src="data/security-cloud.js"></script>
+    <script src="data/security-cloud-exams.js"></script>
     <script src="app.js"></script>
 </body>
 
